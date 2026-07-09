@@ -20,7 +20,10 @@ program fq8_effective_response_test
   parameters%gamma=0.6_wp; parameters%f_transition=1.0_wp
   parameters%fref=1.0_wp
   call build_fq8_coefficients(parameters,tau,strength_s,strength_p,status,message)
-  if (status /= 0) error stop trim(message)
+  if (status /= 0) then
+       write(*,'(A)') trim(message)
+       stop 1
+  end if
 
   q=fq8_effective_q(1.0_wp,tau,strength_s)
   scale=fq8_common_modulus_scale(1.0_wp,tau,strength_s)
@@ -50,7 +53,10 @@ program fq8_effective_response_test
   parameters%weight_policy='nonnegative-refit'
   call build_fq8_coefficients(parameters,tau_refit,strength_s_refit, &
        strength_p_refit,status,message)
-  if (status /= 0) error stop trim(message)
+  if (status /= 0) then
+     write(*,'(A)') trim(message)
+     stop 1
+  end if
   if (any(strength_s_refit < 0.0_wp) .or. any(strength_p_refit < 0.0_wp)) &
        error stop 'nonnegative-refit retained a negative strength'
   call require_close('refit preserves Qeff at fref', &
@@ -89,9 +95,12 @@ contains
     write(unit,'(A)') " weight_policy='table-exact',"
     write(unit,'(A)') ' Qs0=50d0, Qp0=50d0, gamma=0d0, f_transition=1d0, fref=1d0 /'
     rewind(unit)
-    call read_fq8_parameters(unit,parsed,status,message)
-    close(unit)
-    if (status /= 0) error stop trim(message)
+      call read_fq8_parameters(unit,parsed,status,message)
+      close(unit)
+      if (status /= 0) then
+           write(*,'(A)') trim(message)
+           stop 1
+      end if
     if (parsed%coarse_grain /= 2) error stop 'missing coarse_grain did not default to 2'
 
     open(newunit=unit,status='scratch',action='readwrite')
@@ -99,9 +108,12 @@ contains
     write(unit,'(A)') " coefficient_method='conventional-nnls',"
     write(unit,'(A)') ' Qs0=50d0, Qp0=50d0, gamma=0d0, f_transition=1d0, fref=1d0 /'
     rewind(unit)
-    call read_fq8_parameters(unit,parsed,status,message)
-    close(unit)
-    if (status /= 0) error stop trim(message)
+      call read_fq8_parameters(unit,parsed,status,message)
+      close(unit)
+      if (status /= 0) then
+           write(*,'(A)') trim(message)
+           stop 1
+      end if
     if (parsed%coarse_grain /= 0) &
          error stop 'missing coarse_grain did not preserve conventional full mode'
 
@@ -111,9 +123,12 @@ contains
     write(unit,'(A)') ' coarse_grain=0,'
     write(unit,'(A)') ' Qs0=50d0, Qp0=50d0, gamma=0d0, f_transition=1d0, fref=1d0 /'
     rewind(unit)
-    call read_fq8_parameters(unit,parsed,status,message)
-    close(unit)
-    if (status /= 0) error stop trim(message)
+      call read_fq8_parameters(unit,parsed,status,message)
+      close(unit)
+      if (status /= 0) then
+           write(*,'(A)') trim(message)
+           stop 1
+      end if
     if (parsed%coarse_grain /= 0) error stop 'coarse_grain=0 did not parse'
 
     open(newunit=unit,status='scratch',action='readwrite')
