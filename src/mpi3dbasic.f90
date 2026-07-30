@@ -17,6 +17,8 @@ module mpi3dbasic
   integer,save :: nprocs,rank
 
   real(kind = wp),save :: time_start ! time at which MPI was initialized
+  real(kind = wp),save :: run_info_time_start = 0.0_wp
+  logical,save :: run_info_time_started = .false.
 
 contains
 
@@ -59,10 +61,37 @@ contains
 
     implicit none
 
-    integer :: ierr
+    integer :: ierr, vals(8), days, hours, minutes
+    real(kind = wp) :: elapsed, seconds
+    character(64) :: end_time, elapsed_time
+    character(256) :: lines(3)
+    character(3),parameter :: mon(12) = (/ 'Jan','Feb','Mar','Apr','May','Jun', &
+                                                           'Jul','Aug','Sep','Oct','Nov','Dec' /)
 
-    if (is_master()) write(stdout,'(/,a,g20.10,a)') &
-         'Total MPI time ',time_elapsed(),' s'
+    if (is_master()) then
+       call date_and_time(values=vals)
+       write(end_time,'(i2.2,":",i2.2,":",i2.2,1x,a3,"-",i2.2,"-",i4.4)') &
+            vals(5), vals(6), vals(7), mon(vals(2)), vals(3), vals(1)
+
+       if (run_info_time_started) then
+          elapsed = MPI_WTime() - run_info_time_start
+       else
+          elapsed = time_elapsed()
+       end if
+       days = int(elapsed/86400.0_wp)
+       hours = int(mod(elapsed,86400.0_wp)/3600.0_wp)
+       minutes = int(mod(elapsed,3600.0_wp)/60.0_wp)
+       seconds = mod(elapsed,60.0_wp)
+       write(elapsed_time,'(I0,"d ",I2.2,":",I2.2,":",F6.3," (",F0.3," s)")') &
+            days, hours, minutes, seconds, elapsed
+
+       lines = ''
+       lines(1) = 'WAVEQLAB3D run completed'
+       lines(2) = 'simulation end time: ' // trim(end_time)
+       lines(3) = 'total elapsed time: ' // trim(elapsed_time)
+       write(stdout,'(/)')
+       call boxed_lines(stdout, lines)
+    end if
 
     call MPI_Finalize(ierr)
 
@@ -194,6 +223,7 @@ contains
    subroutine print_run_info(input_file, problem_name, problem_type, width)
       ! PRINT_RUN_INFO prints a short run header (master rank recommended).
 
+      use mpi, only : MPI_WTime
       implicit none
 
       character(*),intent(in) :: input_file
@@ -210,6 +240,8 @@ contains
                                                              'Jul','Aug','Sep','Oct','Nov','Dec' /)
       character(256) :: lines(8)
 
+      run_info_time_start = MPI_WTime()
+      run_info_time_started = .true.
       call date_and_time(values=vals)
       write(start_time,'(i2.2,":",i2.2,":",i2.2,1x,a3,"-",i2.2,"-",i4.4)') &
              vals(5), vals(6), vals(7), mon(vals(2)), vals(3), vals(1)

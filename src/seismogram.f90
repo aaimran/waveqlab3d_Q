@@ -378,18 +378,34 @@ contains
   subroutine write_seismogram(S, t, F)
 
     use mpi3dbasic, only : rank
+    use diagnostics, only : fatal_local
+    use, intrinsic :: ieee_arithmetic, only : ieee_is_finite
     implicit none
 
     type(seismogram_type),intent(in) :: S
     real(kind = wp),intent(in) :: t
     real(kind = wp), dimension(:,:,:,:), allocatable, intent(in) :: F
-    integer :: n
+    integer :: n, bad_component
+    real(kind = wp) :: station_values(4)
+    character(len=256) :: message
+    character(len=4), parameter :: component_name(4) = [character(len=4) :: &
+         'time', 'vx', 'vy', 'vz']
 
     if (S%output_seismograms .and. S%nstations > 0) then
  
        do n = 1,S%nstations
           if (S%i(n) > 0 .and. S%j(n) > 0 .and. S%k(n) > 0) then
-            write(S%file_unit(n),'(4f15.10)') t, F(S%i(n),S%j(n),S%k(n),1:3)
+            station_values = [t, F(S%i(n),S%j(n),S%k(n),1:3)]
+            if (.not.all(ieee_is_finite(station_values))) then
+               bad_component = findloc(.not.ieee_is_finite(station_values), .true., dim=1)
+               write(message,'(A,I0,A,I0,A,I0,A,I0,A,A,A,ES24.16E3)') &
+                    'Non-finite station output at station ', n, ' (i,j,k)=(', &
+                    S%i(n), ',', S%j(n), ',', S%k(n), '), component ', &
+                    trim(component_name(bad_component)), ', value=', station_values(bad_component)
+               call fatal_local('RUN-STATION-001', trim(message), &
+                    'write_seismogram', S%block_num)
+            end if
+            write(S%file_unit(n),'(ES24.16E3,3(1X,ES24.16E3))') station_values
           end if
        end do
 

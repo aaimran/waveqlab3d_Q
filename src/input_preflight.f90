@@ -87,8 +87,8 @@ contains
                      section='block_list', suggestion='Define every active block and fix namelist syntax.')
              else
                 call validate_blocks(btp, nblocks, fd_type, order, issues)
-                if (nblocks == 2 .and. .not.issues%has_errors()) &
-                     call validate_two_block_interface(btp, issues)
+                call validate_exterior_boundaries(btp, nblocks, issues)
+                if (nblocks == 2) call validate_two_block_interface(btp, issues)
                 if (.not.issues%has_errors()) &
                      call resolve_decomposition(btp, nblocks, world_size, fd_type, order, &
                           config, issues)
@@ -279,6 +279,34 @@ contains
        end if
     end do
   end subroutine validate_blocks
+
+
+  subroutine validate_exterior_boundaries(btp, nblocks, issues)
+    type(block_temp_parameters), intent(in) :: btp(2)
+    integer, intent(in) :: nblocks
+    type(diagnostic_list_t), intent(inout) :: issues
+
+    if (nblocks == 1) then
+       if (any(btp(1)%lqrs == 0) .or. any(btp(1)%rqrs == 0)) &
+            call issues%add(DIAG_ERROR, 'CFG-BOUNDARY-001', &
+            'Boundary code 0 is reserved for an internal block interface; all single-block faces are exterior.', &
+            section='block_list', field='btp(1)%lqrs/rqrs', block_id=1, &
+            suggestion='Use boundary code 1 (characteristic) or 2 (free surface) on every exterior face.')
+    else if (nblocks == 2) then
+       ! The supported two-block topology joins block 1 right-q to block 2
+       ! left-q. Every other face is exterior.
+       if (any(btp(1)%lqrs == 0) .or. any(btp(1)%rqrs(2:3) == 0)) &
+            call issues%add(DIAG_ERROR, 'CFG-BOUNDARY-001', &
+            'Block 1 uses interface boundary code 0 on an exterior face.', &
+            section='block_list', field='btp(1)%lqrs or btp(1)%rqrs(2:3)', block_id=1, &
+            suggestion='Only btp(1)%rqrs(1) may be 0 in the supported two-block topology.')
+       if (any(btp(2)%rqrs == 0) .or. any(btp(2)%lqrs(2:3) == 0)) &
+            call issues%add(DIAG_ERROR, 'CFG-BOUNDARY-001', &
+            'Block 2 uses interface boundary code 0 on an exterior face.', &
+            section='block_list', field='btp(2)%rqrs or btp(2)%lqrs(2:3)', block_id=2, &
+            suggestion='Only btp(2)%lqrs(1) may be 0 in the supported two-block topology.')
+    end if
+  end subroutine validate_exterior_boundaries
 
 
   subroutine validate_two_block_interface(btp, issues)
