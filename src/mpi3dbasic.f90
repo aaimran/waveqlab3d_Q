@@ -69,6 +69,8 @@ contains
                                                            'Jul','Aug','Sep','Oct','Nov','Dec' /)
 
     if (is_master()) then
+       write(stdout,'(/,A,G20.10,A)') 'Total MPI time ', time_elapsed(), ' s'
+
        call date_and_time(values=vals)
        write(end_time,'(i2.2,":",i2.2,":",i2.2,1x,a3,"-",i2.2,"-",i4.4)') &
             vals(5), vals(6), vals(7), mon(vals(2)), vals(3), vals(1)
