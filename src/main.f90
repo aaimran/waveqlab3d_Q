@@ -26,7 +26,7 @@ program main
   use domain, only : domain_type,init_domain, close_domain, &
                      eval_mms, norm_fields, write_fault_output
   use simulation_config, only : simulation_config_t
-  use input_preflight, only : preflight_input
+  use input_preflight, only : preflight_input, print_preflight_time_parameters
   use time_step, only : RK_type,init_RK,time_step_RK
   implicit none
 
@@ -50,7 +50,9 @@ program main
 
   ! Variables for parsing the input file
   character(len=256) :: ifname !< Input filename
+  character(len=32) :: preflight_env
   integer :: infile, len_ifname, stat
+  logical :: preflight_only
   real(kind = wp) :: t1, t2     ! timing information
   real(kind = wp) :: step_s, progress_pct
 
@@ -71,6 +73,16 @@ program main
   if (stat /= 0) stop ':: Problem reading input filename from commandline.'
 
   call preflight_input(ifname, resolved_config)
+
+  preflight_env = ''
+  call get_environment_variable('WAVEQLAB3D_PREFLIGHT_ONLY', preflight_env, status=stat)
+  preflight_only = stat == 0 .and. &
+       any(trim(adjustl(preflight_env)) == [character(len=5) :: '1', 'true', 'TRUE', 'yes', 'YES'])
+  if (preflight_only) then
+     if (is_master()) call print_preflight_time_parameters(resolved_config)
+     call finish_mpi(.false.)
+     stop
+  end if
 
   ! Read the input file
   open(newunit=infile, file=ifname, iostat=stat, status='old')

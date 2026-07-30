@@ -14,7 +14,7 @@ module input_preflight
   implicit none
   private
 
-  public :: preflight_input
+  public :: preflight_input, print_preflight_time_parameters
 
 contains
 
@@ -189,6 +189,64 @@ contains
     if (config%serial_shared_blocks) write(*,'(A)') &
          '  serial two-block mode: rank 0 owns both blocks'
   end subroutine print_decomposition
+
+
+  subroutine print_preflight_time_parameters(config)
+    use block, only : block_time_step
+    use anelastic_q4_model, only : q4_relaxation_dt_limit
+    use anelastic_q8_model, only : q8_relaxation_dt_limit
+    use anelastic_fq8_model, only : fq8_relaxation_dt_limit
+
+    type(simulation_config_t), intent(in) :: config
+    integer :: i, nt, limiting_block
+    real(wp) :: spacing(3), block_limit, elastic_limit, relaxation_limit
+    real(wp) :: dt_limit, covered_time
+    character(len=256) :: response
+
+    elastic_limit = huge(1.0_wp)
+    limiting_block = 0
+    do i = 1, config%problem%nblocks
+       spacing = (config%blocks(i)%bqrs-config%blocks(i)%aqrs) / &
+            real(config%blocks(i)%nqrs-1, kind=wp)
+       block_limit = block_time_step(spacing, config%problem%CFL, &
+            config%blocks(i)%rho_s_p)
+       write(*,'(A,I0,A,3(ES14.6E3,1X),A,ES14.6E3)') &
+            '  block ', i, ': spacing ', spacing, ' elastic dt limit ', block_limit
+       if (block_limit < elastic_limit) then
+          elastic_limit = block_limit
+          limiting_block = i
+       end if
+    end do
+
+    response = trim(adjustl(config%problem%response))
+    relaxation_limit = huge(1.0_wp)
+    select case (trim(response))
+    case ('anelastic-Q4')
+       relaxation_limit = q4_relaxation_dt_limit(config%q4)
+    case ('anelastic-Q8')
+       relaxation_limit = q8_relaxation_dt_limit(config%q8)
+    case ('anelastic-fQ8')
+       relaxation_limit = fq8_relaxation_dt_limit(config%fq8)
+    end select
+
+    dt_limit = min(elastic_limit, relaxation_limit)
+    nt = floor(config%problem%t_final/dt_limit)
+    covered_time = real(nt, kind=wp)*dt_limit
+
+    write(*,'(/,A)') 'Resolved time parameters:'
+    write(*,'(A,A)') '  problem name: ', trim(config%problem%name)
+    write(*,'(A,A)') '  response: ', trim(response)
+    write(*,'(A,ES24.16E3)') '  requested final time: ', config%problem%t_final
+    write(*,'(A,ES24.16E3,A,I0,A)') '  elastic CFL limit: ', elastic_limit, &
+         ' (block ', limiting_block, ')'
+    if (relaxation_limit < huge(1.0_wp)) &
+         write(*,'(A,ES24.16E3)') '  relaxation limit: ', relaxation_limit
+    write(*,'(A,ES24.16E3)') '  selected dt: ', dt_limit
+    write(*,'(A,I0)') '  number of time steps: ', nt
+    write(*,'(A,ES24.16E3)') '  time reached after nt steps: ', covered_time
+    write(*,'(A,ES24.16E3)') '  remainder to requested final time: ', &
+         config%problem%t_final-covered_time
+  end subroutine print_preflight_time_parameters
 
 
   subroutine set_problem_defaults(name, problem, response, plastic_model, nblocks, &

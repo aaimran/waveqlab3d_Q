@@ -55,12 +55,13 @@ contains
   end function time_elapsed
 
 
-  subroutine finish_mpi
+  subroutine finish_mpi(report_timing)
 
     use mpi
 
     implicit none
 
+    logical, intent(in), optional :: report_timing
     integer :: ierr, vals(8), days, hours, minutes
     real(kind = wp) :: elapsed, seconds
     character(64) :: end_time, elapsed_time
@@ -68,7 +69,7 @@ contains
     character(3),parameter :: mon(12) = (/ 'Jan','Feb','Mar','Apr','May','Jun', &
                                                            'Jul','Aug','Sep','Oct','Nov','Dec' /)
 
-    if (is_master()) then
+    if (is_master() .and. (.not.present(report_timing) .or. report_timing)) then
        write(stdout,'(/,A,G20.10,A)') 'Total MPI time ', time_elapsed(), ' s'
 
        call date_and_time(values=vals)
