@@ -21,3 +21,86 @@ Qs0 and Qp0 must be supplied together and must be positive. Existing inputs
 that omit them remain supported through the legacy parameter c, which defines
 Qs = c*Vs and Qp = 2*Qs. The stored eight-mechanism weights are normalized
 spectral-shape coefficients; the RHS scales them once by the local inverse Q.
+
+Station output columns default to `t vx vy vz`. Their order can be changed in
+the `output_list` namelist; for example:
+
+    &output_list
+      output_seismograms = T,
+      station_output_order = 't vz vx vy'
+    /
+
+`station_output_order` is case-insensitive, accepts spaces or commas between
+names, and must contain each of `t`, `vx`, `vy`, and `vz` exactly once.
+
+A leading integer station number can optionally be included on every station
+list row and used in the output filename:
+
+    &output_list
+      output_seismograms = T,
+      station_number_in_list = T,
+      station_number_in_filename = T
+    /
+
+    !---begin:station_list---
+    1   0.693d0   0.000d0   0.000d0
+    2   5.543d0   0.000d0   0.000d0
+    3  10.392d0   0.000d0   0.000d0
+    !---end:station_list---
+
+This produces names such as `fname_station-1.dat`. Both options default to
+false. `station_number_in_filename = T` requires
+`station_number_in_list = T`.
+
+Station files can be written directly in `station_file_directory` instead of
+its `block1` and `block2` subdirectories, and stations can be restricted to one
+block:
+
+    &output_list
+      output_seismograms = T,
+      station_use_block_subdirectories = F,
+      common_stations_blocks = 'both'
+    /
+
+`common_stations_blocks` accepts `block1`, `block2`, or `both` and defaults to `both`.
+`station_use_block_subdirectories` defaults to true. When `both` is selected,
+station files that use physical coordinates or station numbers in their names
+receive a `_block1` or `_block2` suffix, preventing common-plane stations from
+overwriting one another.
+
+Optional commented headers and station metadata can be written at the start of
+each station `.dat` file:
+
+    &output_list
+      station_add_header = T,
+      station_add_metadata = T
+    /
+
+For `station_output_order = 't vz vx vy'`, the beginning of a numbered station
+file is:
+
+    # station_number: 1
+    # x y z:  6.9300000000000000E-001  0.0000000000000000E+000  0.0000000000000000E+000
+    # grid_i j k: 58 1 51
+    # grid_x y z:  7.0000000000000000E-001  0.0000000000000000E+000  0.0000000000000000E+000
+    # mapping_distance:  7.0000000000000000E-003
+    # t vz vx vy
+
+Requested and mapped physical coordinates, grid indices, and mapping distance
+are included when metadata is enabled. The station number line is included when
+`station_number_in_list = T`. Both preamble options default to false.
+
+The station-to-grid mapping printed during startup is controlled separately
+from the boxed station summary:
+
+    &output_list
+      output_station_mapping = F
+    /
+
+It defaults to true. When enabled, every matched station is printed on one
+clearly delimited line ending in a semicolon, for example:
+
+    station 1: distance= 7.000000E-003, indices=(58 1 51), grid_xyz=(...), requested_xyz=(...);
+
+`output_station_info` only controls the boxed configuration summary;
+`output_station_mapping` controls these individual station mapping lines.

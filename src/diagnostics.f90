@@ -172,23 +172,28 @@ contains
   end subroutine warn_once
 
 
-  subroutine fatal_local(code, message, routine, block_id)
+  subroutine fatal_local(code, message, routine, block_id, root_only)
     character(*), intent(in) :: code, message
     character(*), intent(in), optional :: routine
     integer, intent(in), optional :: block_id
+    logical, intent(in), optional :: root_only
     integer :: ierr, world_rank
-    logical :: initialized
+    logical :: initialized, print_here
 
     call MPI_Initialized(initialized, ierr)
     world_rank = 0
     if (initialized) call MPI_Comm_rank(MPI_COMM_WORLD, world_rank, ierr)
 
-    write(error_unit,'(/,A,2X,A)') 'FATAL', trim(code)
-    write(error_unit,'(A,I0)') '  Rank: ', world_rank
-    if (present(block_id)) write(error_unit,'(A,I0)') '  Block: ', block_id
-    if (present(routine)) write(error_unit,'(A,A)') '  Routine: ', trim(routine)
-    write(error_unit,'(A,A)') '  ', trim(message)
-    flush(error_unit)
+    print_here = .true.
+    if (present(root_only)) print_here = .not.root_only .or. world_rank == 0
+    if (print_here) then
+       write(error_unit,'(/,A,2X,A)') 'FATAL', trim(code)
+       write(error_unit,'(A,I0)') '  Rank: ', world_rank
+       if (present(block_id)) write(error_unit,'(A,I0)') '  Block: ', block_id
+       if (present(routine)) write(error_unit,'(A,A)') '  Routine: ', trim(routine)
+       write(error_unit,'(A,A)') '  ', trim(message)
+       flush(error_unit)
+    end if
 
     if (initialized) then
        call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
