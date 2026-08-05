@@ -1,7 +1,7 @@
 ! waveqlab3d
 
 &problem_list
- name = 'w_elastic_a_100_v6_p3_b2',
+ name = 'w_elastic_a_100_t6_p0_b2',
  problem = 'TPV5',
  nblocks = 2,
  t_final = 5.0d0,
@@ -9,7 +9,7 @@
  coupling = 'locked',
  type_of_mesh = 'cartesian',
  material_source = 'hardcode',
- fd_type = 'upwind_drp',
+ fd_type = 'traditional',
  order = 6,
  response = 'elastic',
  w_stride = 10,
@@ -22,8 +22,8 @@ btp(1)%bqrs =  5d0,  10d0,  15d0,
 btp(1)%rho_s_p = 2.7d0, 3.464d0, 6d0,
 btp(1)%lqrs = 1, 2, 1,
 btp(1)%rqrs = 0, 1, 1,
-btp(1)%pml_lqrs = T, F, T,
-btp(1)%pml_rqrs = F, T, T,
+btp(1)%pml_lqrs = F, F, F,
+btp(1)%pml_rqrs = F, F, F,
 btp(1)%npml = 30,
 
 btp(2)%nqrs =  101,   101,   201,
@@ -32,8 +32,8 @@ btp(2)%bqrs = 15d0,  10d0,  15d0,
 btp(2)%rho_s_p = 2.7d0, 3.464d0, 6d0,
 btp(2)%lqrs = 0, 2, 1,
 btp(2)%rqrs = 1, 1, 1,
-btp(2)%pml_lqrs = F, F, T,
-btp(2)%pml_rqrs = T, T, T,
+btp(2)%pml_lqrs = F, F, F,
+btp(2)%pml_rqrs = F, F, F,
 btp(2)%npml = 30 / 
 
 
@@ -62,8 +62,16 @@ btp(2)%npml = 30 /
  stride_fields = 1,
  station_xyz_index = T,
  station_list = 'infile',
- station_file_directory = './output/HHS/Elastic/w_elastic_a_100_v6_p3_b2',
- output_station_info = F
+ station_file_directory = './output/HHS/Elastic/w_elastic_a_100_t6_p0_b2',
+ output_station_info = F,
+ station_number_in_list = T,
+ station_number_in_filename = T,
+ station_output_order = 't vz vx vy',
+ station_use_block_subdirectories = F,
+ common_stations_blocks = 'both',
+ station_add_header = T,
+ station_add_metadata = T,
+ output_station_mapping = F
  /
 
 !---begin:station_list---

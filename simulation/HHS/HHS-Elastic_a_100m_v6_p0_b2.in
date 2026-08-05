@@ -1,7 +1,7 @@
 ! waveqlab3d
 
 &problem_list
- name = 'test-1_dom-a_res-100m_pml-0km_fd-v6_nb-2',
+ name = 'w_elastic_a_100_v6_p0_b2',
  problem = 'TPV5',
  nblocks = 2,
  t_final = 5.0d0,
@@ -12,25 +12,25 @@
  fd_type = 'upwind_drp',
  order = 6,
  response = 'elastic',
- w_stride = 1,
+ w_stride = 10,
  w_fault = F /
 
 &block_list
-btp(1)%nqrs =  101,   201,   201,
-btp(1)%aqrs = -5d0,  10d0, -05d0,
-btp(1)%bqrs =  5d0,  30d0,  15d0,
+btp(1)%nqrs =  101,   101,   201,
+btp(1)%aqrs = -5d0,  00d0, -05d0,
+btp(1)%bqrs =  5d0,  10d0,  15d0,
 btp(1)%rho_s_p = 2.7d0, 3.464d0, 6d0,
-btp(1)%lqrs = 1, 1, 1,
+btp(1)%lqrs = 1, 2, 1,
 btp(1)%rqrs = 0, 1, 1,
 btp(1)%pml_lqrs = F, F, F,
 btp(1)%pml_rqrs = F, F, F,
 btp(1)%npml = 30,
 
-btp(2)%nqrs =  101,   201,   201,
-btp(2)%aqrs =  5d0,  10d0, -05d0,
-btp(2)%bqrs = 15d0,  30d0,  15d0,
+btp(2)%nqrs =  101,   101,   201,
+btp(2)%aqrs =  5d0,  00d0, -05d0,
+btp(2)%bqrs = 15d0,  10d0,  15d0,
 btp(2)%rho_s_p = 2.7d0, 3.464d0, 6d0,
-btp(2)%lqrs = 0, 1, 1,
+btp(2)%lqrs = 0, 2, 1,
 btp(2)%rqrs = 1, 1, 1,
 btp(2)%pml_lqrs = F, F, F,
 btp(2)%pml_rqrs = F, F, F,
@@ -42,7 +42,7 @@ btp(2)%npml = 30 /
  order = 4 /
 
 !---begin:tensor_listU---
-'LOH_discontinuity' 0.1d0 0d0  0d0 0d0 0d0  0d0 1d3 0d0  0d0 20d0 0d0  0
+'LOH_discontinuity' 0.1d0 0d0  0d0 0d0 0d0  0d0 1d3 0d0  0d0 0.693d0 0d0  0
 !---end:tensor_listU---
 
 !---begin:tensor_listV---
@@ -62,21 +62,26 @@ btp(2)%npml = 30 /
  stride_fields = 1,
  station_xyz_index = T,
  station_list = 'infile',
- station_file_directory = './output/test-1_v6_p0_dom-a_nb2',
+ station_file_directory = './output/HHS/Elastic/w_elastic_a_100_v6_p0_b2',
  output_station_info = F
+ station_number_in_list = T,
+ station_number_in_filename = T,
+ station_output_order = 't vz vx vy',
+ station_use_block_subdirectories = F,
+ common_stations_blocks = 'both',
+ station_add_header = T,
+ station_add_metadata = T,
+ output_station_mapping = F
  /
 
 !---begin:station_list---
- 0.693d0  20.000d0   0.000d0
- 5.543d0  20.000d0   0.000d0
-10.392d0  20.000d0   0.000d0
- 0.490d0  20.000d0   0.490d0
- 3.919d0  20.000d0   3.919d0
- 7.348d0  20.000d0   7.348d0
- 0.400d0  20.400d0   0.400d0
- 3.200d0  23.200d0   3.200d0
- 6.000d0  26.000d0   6.000d0
- 0.370d0  20.185d0   0.555d0
- 2.962d0  21.481d0   4.443d0
- 5.554d0  22.777d0   8.331d0
+ 1   0.693d0  0.000d0   0.000d0
+ 2   5.543d0  0.000d0   0.000d0
+ 3  10.392d0  0.000d0   0.000d0
+ 4   0.490d0  0.000d0   0.490d0
+ 5   3.919d0  0.000d0   3.919d0
+ 6   7.348d0  0.000d0   7.348d0
+ 7   0.384d0  0.000d0   0.577d0
+ 8   3.075d0  0.000d0   4.612d0
+ 9   5.764d0  0.000d0   8.647d0
 !---end:station_list---

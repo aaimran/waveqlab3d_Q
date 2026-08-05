@@ -1,7 +1,7 @@
 ! waveqlab3d
 
 &problem_list
- name = 'w_elastic_a_100_t6_p3_b2',
+ name = 'w_anelastic_a_100_u6_p3_b2',
  problem = 'TPV5',
  nblocks = 2,
  t_final = 5.0d0,
@@ -9,11 +9,16 @@
  coupling = 'locked',
  type_of_mesh = 'cartesian',
  material_source = 'hardcode',
- fd_type = 'traditional',
+ fd_type = 'upwind',
  order = 6,
- response = 'elastic',
+ response = 'anelastic-Q8',
  w_stride = 10,
  w_fault = F /
+
+&anelastic_Q8_list
+ Qs0 = 30d0,
+ Qp0 = 60d0,
+ fref = 2.5d0 /
 
 &block_list
 btp(1)%nqrs =  101,   101,   201,
@@ -62,8 +67,16 @@ btp(2)%npml = 30 /
  stride_fields = 1,
  station_xyz_index = T,
  station_list = 'infile',
- station_file_directory = './output/HHS/Elastic/w_elastic_a_100_t6_p3_b2',
- output_station_info = F
+ station_file_directory = './output/HHS/Anelastic/w_anelastic_a_100_u6_p3_b2',
+ output_station_info = F,
+ station_number_in_list = T,
+ station_number_in_filename = T,
+ station_output_order = 't vz vx vy',
+ station_use_block_subdirectories = F,
+ common_stations_blocks = 'both',
+ station_add_header = T,
+ station_add_metadata = T,
+ output_station_mapping = F
  /
 
 !---begin:station_list---
