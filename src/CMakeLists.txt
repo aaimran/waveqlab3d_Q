@@ -62,6 +62,7 @@ set(WQL3D_SRC
   withers_tables.f90
   anelastic_q4_model.f90
   anelastic_q8_model.f90
+  anelastic_cq8_b2_model.f90
   anelastic_fq8_model.f90
   simulation_config.f90
   input_preflight.f90
@@ -156,6 +157,23 @@ add_test(NAME q8_dynamic_decomposition
     -D EXE=$<TARGET_FILE:waveqlab3d>
     -D INPUT=${CMAKE_CURRENT_SOURCE_DIR}/../inputfile/test_anelastic_Q8_dynamic.in
     -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/run_q8_dynamic_regression.cmake)
+
+add_test(NAME cq8_b2_dynamic_decomposition
+  COMMAND ${CMAKE_COMMAND}
+    -D MPIEXEC=${WQL3D_MPI_RUNNER}
+    -D EXE=$<TARGET_FILE:waveqlab3d>
+    -D INPUT=${CMAKE_CURRENT_SOURCE_DIR}/../inputfile/test_anelastic_cQ8_b2_dynamic.in
+    -D STATE_LABEL=cQ8-b2
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/run_q8_dynamic_regression.cmake)
+
+add_test(NAME cq8_b2_rejects_one_block
+  COMMAND ${CMAKE_COMMAND}
+    -D MPIEXEC=${WQL3D_MPI_RUNNER}
+    -D NPROCS=1
+    -D EXE=$<TARGET_FILE:waveqlab3d>
+    -D INPUT=${CMAKE_CURRENT_SOURCE_DIR}/../inputfile/test_anelastic_cQ8_b2_invalid_nb1.in
+    -D EXPECTED_CODE=CFG-CQ8-B2-002
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/run_expected_preflight_failure.cmake)
 
 add_test(NAME q4_dynamic_decomposition
   COMMAND ${CMAKE_COMMAND}

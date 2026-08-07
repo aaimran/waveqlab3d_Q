@@ -2,7 +2,7 @@
 
 WaveQLab3D is a code for 3D seismic wave propagation and earthquake rupture dynamics. It solves the elastic wave equation in curvilinear coordinates (i.e., complex geometries) with a possibly nonplanar frictional fault interface. The current version supports off-fault viscoplasticity, spatially variable elastic properties, and several friction laws (including rate-and-state and slip-weakening). The code is under development and is available under the MIT license. Authors include Kenneth Duru, Sam Bydlon, Eric Dunham, and Kyle Withers with parallelization by Hari Radhakrishnan.
 
-Supported attenuation response options currently include `anelastic`, `anelastic-Q`, `anelastic-Q8`, `anelastic-Qf`, `constant-Q-4M`, `constant-Q-8M`, `frequency-Q-4M`, and `frequency-Q-8M`.
+Supported attenuation response options currently include `anelastic`, `anelastic-Q`, `anelastic-Q8`, `anelastic-cQ8-b2`, `anelastic-Qf`, `constant-Q-4M`, `constant-Q-8M`, `frequency-Q-4M`, and `frequency-Q-8M`.
 
 For the fixed eight-mechanism constant-Q response, prefer explicit P- and
 S-wave quality factors in anelastic_Q8_list:
@@ -17,10 +17,29 @@ S-wave quality factors in anelastic_Q8_list:
       fref = 1.0
     /
 
-Qs0 and Qp0 must be supplied together and must be positive. Existing inputs
-that omit them remain supported through the legacy parameter c, which defines
-Qs = c*Vs and Qp = 2*Qs. The stored eight-mechanism weights are normalized
+Qs0 and Qp0 must be supplied together and must be positive. The stored eight-mechanism weights are normalized
 spectral-shape coefficients; the RHS scales them once by the local inverse Q.
+
+For a two-block model with a different constant Q pair in each block, use the
+additive `anelastic-cQ8-b2` response. It requires `nblocks=2`; array element 1
+applies to block 1 and element 2 applies to block 2:
+
+    &problem_list
+      response = 'anelastic-cQ8-b2'
+      nblocks = 2
+    /
+
+    &anelastic_cQ8_b2_list
+      Qs0 = 40.0, 100.0
+      Qp0 = 80.0, 180.0
+      fref = 1.0
+      fmin = 0.05
+      fmax = 20.0
+      weight_method = 'fixed-q50'
+    /
+
+The reference frequency, approximation band, and eight-mechanism weight method
+are shared by the blocks. Existing `anelastic-Q8` inputs and behavior are unchanged.
 
 Station output columns default to `t vx vy vz`. Their order can be changed in
 the `output_list` namelist; for example:

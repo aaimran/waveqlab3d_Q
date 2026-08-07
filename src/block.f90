@@ -151,7 +151,7 @@ module block
         B%M%anelastic_Q = .false.
       end if
 
-      if (trim(response) == 'anelastic-Q8') then
+      if (trim(response) == 'anelastic-Q8' .or. trim(response) == 'anelastic-cQ8-b2') then
         call init_anelastic_Q8_properties(B%M, B%G, infile, q8_config)
       else
         B%M%anelastic_Q8 = .false.

@@ -41,6 +41,8 @@ contains
     use simulation_config, only : simulation_config_t
     use anelastic_q4_model, only : q4_relaxation_dt_limit
     use anelastic_q8_model, only : q8_relaxation_dt_limit
+    use anelastic_q8_model, only : q8_parameters
+    use anelastic_cq8_b2_model, only : cq8_b2_relaxation_dt_limit
     use anelastic_fq8_model, only : fq8_relaxation_dt_limit
 
     implicit none
@@ -78,6 +80,7 @@ contains
     integer :: nprocs_1, nprocs_2
 
     type(block_temp_parameters) :: btp(2)
+    type(q8_parameters) :: selected_q8
 
 
     !---------------------------------------------------------------------------
@@ -164,6 +167,9 @@ contains
      else if (trim(response_norm) == 'anelastic-Q8') then
        relaxation_dt_limit = q8_relaxation_dt_limit(config%q8)
        dtmin = min(dtmin, relaxation_dt_limit)
+     else if (trim(response_norm) == 'anelastic-cQ8-b2') then
+       relaxation_dt_limit = cq8_b2_relaxation_dt_limit(config%cq8_b2)
+       dtmin = min(dtmin, relaxation_dt_limit)
      else if (trim(response_norm) == 'anelastic-fQ8') then
        relaxation_dt_limit = fq8_relaxation_dt_limit(config%fq8)
        dtmin = min(dtmin, relaxation_dt_limit)
@@ -215,9 +221,11 @@ contains
     end if
        
       if (.not.in_block_comm(i)) cycle
+      selected_q8 = config%q8
+      if (trim(response_norm) == 'anelastic-cQ8-b2') selected_q8 = config%cq8_b2%block(i)
       call init_block(D%mesh_source, D%type_of_mesh, D%material_source,&
            D%response, D%fd_type,  D%order, D%interpol, D%use_topography, topo, D%B(i), &
-         problem, btp(i), block_comms(i),infile,i, ny, nz, config%q4, config%q8, config%fq8, &
+         problem, btp(i), block_comms(i),infile,i, ny, nz, config%q4, selected_q8, config%fq8, &
          config%process_dims(i,:), D%debug)
 
       cart_size = [D%B(i)%G%C%size_q,D%B(i)%G%C%size_r,D%B(i)%G%C%size_s]
@@ -239,6 +247,8 @@ contains
         write (*,*) "        Q4 relaxation limit = ", relaxation_dt_limit
       if (trim(response_norm) == 'anelastic-Q8') &
         write (*,*) "        Q8 relaxation limit = ", relaxation_dt_limit
+      if (trim(response_norm) == 'anelastic-cQ8-b2') &
+        write (*,*) "        cQ8-b2 relaxation limit = ", relaxation_dt_limit
       write (*,*) "        Final time = ", D%t_final
     end if
 
@@ -422,6 +432,7 @@ contains
     logical :: local_finite, global_finite
 
     if (trim(D%response) == 'anelastic-Q4' .or. trim(D%response) == 'anelastic-Q8' .or. &
+        trim(D%response) == 'anelastic-cQ8-b2' .or. &
         trim(D%response) == 'anelastic-fQ8') then
        local_eta = 0.0_wp
        local_field = 0.0_wp
@@ -434,7 +445,9 @@ contains
                   maxval(abs(D%B(i)%M%eta5Q)), maxval(abs(D%B(i)%M%eta6Q)), &
                   maxval(abs(D%B(i)%M%eta7Q)), maxval(abs(D%B(i)%M%eta8Q)), &
                   maxval(abs(D%B(i)%M%eta9Q)))
-          else if (trim(D%response) == 'anelastic-Q8' .and. allocated(D%B(i)%M%eta4Q8)) then
+          else if ((trim(D%response) == 'anelastic-Q8' .or. &
+                    trim(D%response) == 'anelastic-cQ8-b2') .and. &
+                   allocated(D%B(i)%M%eta4Q8)) then
              local_eta = max(local_eta, maxval(abs(D%B(i)%M%eta4Q8)), &
                   maxval(abs(D%B(i)%M%eta5Q8)), maxval(abs(D%B(i)%M%eta6Q8)), &
                   maxval(abs(D%B(i)%M%eta7Q8)), maxval(abs(D%B(i)%M%eta8Q8)), &
@@ -460,6 +473,9 @@ contains
        if (.not.global_finite .and. trim(D%response) == 'anelastic-Q8') &
             call fatal_local('RUN-Q8-001', &
             'Non-finite Q8 field or memory state detected at shutdown.', 'close_domain')
+       if (.not.global_finite .and. trim(D%response) == 'anelastic-cQ8-b2') &
+            call fatal_local('RUN-CQ8-B2-001', &
+            'Non-finite cQ8-b2 field or memory state detected at shutdown.', 'close_domain')
        if (.not.global_finite .and. trim(D%response) == 'anelastic-fQ8') &
             call fatal_local('RUN-FQ8-001', &
             'Non-finite fQ8 field or memory state detected at shutdown.', 'close_domain')
@@ -469,6 +485,9 @@ contains
        if (rank == 0 .and. trim(D%response) == 'anelastic-Q8') &
             write(*,'(A,ES12.4,A,ES12.4)') &
             'Q8 final state: max|field|=', global_field, ', max|memory|=', global_eta
+       if (rank == 0 .and. trim(D%response) == 'anelastic-cQ8-b2') &
+            write(*,'(A,ES12.4,A,ES12.4)') &
+            'cQ8-b2 final state: max|field|=', global_field, ', max|memory|=', global_eta
        if (rank == 0 .and. trim(D%response) == 'anelastic-fQ8') &
             write(*,'(A,ES12.4,A,ES12.4)') &
             'fQ8 final state: max|field|=', global_field, ', max|memory|=', global_eta
