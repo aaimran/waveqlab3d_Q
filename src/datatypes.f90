@@ -82,6 +82,18 @@ module datatypes
       real(kind = wp), dimension(:,:,:,:), allocatable :: eta4Q8,eta5Q8,eta6Q8,eta7Q8,eta8Q8,eta9Q8
       real(kind = wp), dimension(:,:,:,:), allocatable :: Deta4Q8,Deta5Q8,Deta6Q8,Deta7Q8,Deta8Q8,Deta9Q8
 
+      ! --- independent configurable constant-Q response (response == 'anelastic-cQ')
+      logical :: anelastic_cQ = .false.
+      integer :: n_mechanism_cQ = 0
+      real(kind = wp) :: fref_cQ = 1.0_wp
+      real(kind = wp) :: Qs0_cQ = -1.0_wp, Qp0_cQ = -1.0_wp
+      real(kind = wp) :: fmin_cQ = -1.0_wp, fmax_cQ = -1.0_wp
+      character(len=32) :: coefficient_policy_cQ = ''
+      real(kind = wp), dimension(:), allocatable :: tau_cQ, weight_s_cQ, weight_p_cQ
+      real(kind = wp), dimension(:,:,:), allocatable :: Qp_inv_cQ, Qs_inv_cQ
+      real(kind = wp), dimension(:,:,:,:), allocatable :: eta4cQ,eta5cQ,eta6cQ,eta7cQ,eta8cQ,eta9cQ
+      real(kind = wp), dimension(:,:,:,:), allocatable :: Deta4cQ,Deta5cQ,Deta6cQ,Deta7cQ,Deta8cQ,Deta9cQ
+
       ! --- anelastic-Qf: frequency-dependent Q (response == 'anelastic-Qf')
       logical :: anelastic_Qf = .false.
       integer :: n_mechanism_Qf = 4

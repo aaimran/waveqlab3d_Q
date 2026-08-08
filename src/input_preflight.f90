@@ -9,6 +9,7 @@ module input_preflight
   use anelastic_q4_model, only : read_q4_parameters
   use anelastic_q8_model, only : read_q8_parameters
   use anelastic_cq8_b2_model, only : read_cq8_b2_parameters
+  use anelastic_cq_model, only : read_cq_parameters
   use anelastic_fq8_model, only : read_fq8_parameters
   use decomposition_safety, only : stencil_requirements_t, get_stencil_requirements, &
        topology_fits, select_single_block_topology
@@ -158,6 +159,32 @@ contains
                         config%cq8_b2%block(1)%Qs0, ', Qp0 = ', config%cq8_b2%block(1)%Qp0
                    write(*,'(A,ES12.4,A,ES12.4)') '  block 2: Qs0 = ', &
                         config%cq8_b2%block(2)%Qs0, ', Qp0 = ', config%cq8_b2%block(2)%Qp0
+                end if
+             end if
+          end if
+          if (.not.issues%has_errors() .and. trim(adjustl(response)) == 'anelastic-cQ') then
+             if (nblocks /= 2) then
+                call issues%add(DIAG_ERROR,'CFG-CQ-002', &
+                     'Response anelastic-cQ requires exactly two blocks.', &
+                     section='problem_list',field='nblocks',suggestion='Set nblocks=2.')
+             else if (trim(adjustl(fd_type)) /= 'upwind') then
+                call issues%add(DIAG_ERROR,'CFG-CQ-003', &
+                     'Response anelastic-cQ currently requires fd_type=''upwind''.', &
+                     section='problem_list',field='fd_type', &
+                     suggestion='Use fd_type=''upwind''; other derivative kernels do not yet dispatch cQ.')
+             else
+                call read_cq_parameters(infile,config%cq,stat,iomsg)
+                if (stat /= 0) then
+                   call issues%add(DIAG_ERROR,'CFG-CQ-001',trim(iomsg), &
+                        section='anelastic_cQ_list', &
+                        suggestion='Provide valid Q pairs, frequencies, policy, and n_mechanisms=4..8.')
+                else
+                   config%has_cq=.true.
+                   write(*,'(A,I0)') 'anelastic-cQ mechanisms: ',config%cq%n_mechanisms
+                   write(*,'(A,ES12.4,A,ES12.4)') '  block 1: Qs0=',config%cq%Qs0(1), &
+                        ', Qp0=',config%cq%Qp0(1)
+                   write(*,'(A,ES12.4,A,ES12.4)') '  block 2: Qs0=',config%cq%Qs0(2), &
+                        ', Qp0=',config%cq%Qp0(2)
                 end if
              end if
           end if
@@ -379,6 +406,7 @@ contains
     use anelastic_q8_model, only : q8_relaxation_dt_limit
     use anelastic_fq8_model, only : fq8_relaxation_dt_limit
     use anelastic_cq8_b2_model, only : cq8_b2_relaxation_dt_limit
+    use anelastic_cq_model, only : cq_relaxation_dt_limit
 
     type(simulation_config_t), intent(in) :: config
     integer :: i, nt, limiting_block
@@ -410,6 +438,8 @@ contains
        relaxation_limit = q8_relaxation_dt_limit(config%q8)
     case ('anelastic-cQ8-b2')
        relaxation_limit = cq8_b2_relaxation_dt_limit(config%cq8_b2)
+    case ('anelastic-cQ')
+       relaxation_limit = cq_relaxation_dt_limit(config%cq)
     case ('anelastic-fQ8')
        relaxation_limit = fq8_relaxation_dt_limit(config%fq8)
     end select
@@ -461,7 +491,7 @@ contains
 
     select case (trim(adjustl(response)))
     case ('elastic','plastic','anelastic','low-pass','anelastic-Q','anelastic-Q4','anelastic-Q8', &
-          'anelastic-cQ8-b2', &
+          'anelastic-cQ8-b2','anelastic-cQ', &
           'anelastic-Qf','anelastic-fQ8','constant-Q-4M','constant-Q-8M','frequency-Q-4M','frequency-Q-8M')
     case default
        call issues%add(DIAG_ERROR, 'CFG-PROBLEM-002', &
@@ -730,6 +760,8 @@ contains
     if (config%has_q8) call broadcast_q8(config)
     call MPI_Bcast(config%has_cq8_b2, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, ierr)
     if (config%has_cq8_b2) call broadcast_cq8_b2(config)
+    call MPI_Bcast(config%has_cq, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, ierr)
+    if (config%has_cq) call broadcast_cq(config)
     call MPI_Bcast(config%has_fq8, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, ierr)
     if (config%has_fq8) call broadcast_fq8(config)
   end subroutine broadcast_config
@@ -794,6 +826,23 @@ contains
        call MPI_Bcast(config%cq8_b2%block(i)%fmax, 1, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
     end do
   end subroutine broadcast_cq8_b2
+
+
+  subroutine broadcast_cq(config)
+    type(simulation_config_t), intent(inout) :: config
+    integer :: ierr
+    call MPI_Bcast(config%cq%Qs0,2,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+    call MPI_Bcast(config%cq%Qp0,2,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+    call MPI_Bcast(config%cq%fref,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+    call MPI_Bcast(config%cq%fmin,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+    call MPI_Bcast(config%cq%fmax,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+    call MPI_Bcast(config%cq%n_mechanisms,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+    call MPI_Bcast(config%cq%nnls_samples,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+    call bcast_chars(config%cq%coefficient_policy)
+    call bcast_chars(config%cq%nnls_objective)
+    call MPI_Bcast(config%cq%nnls_tolerance,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+    call MPI_Bcast(config%cq%max_fit_error,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+  end subroutine broadcast_cq
 
   subroutine broadcast_fq8(config)
     type(simulation_config_t), intent(inout) :: config

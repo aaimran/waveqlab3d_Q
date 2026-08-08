@@ -63,10 +63,12 @@ set(WQL3D_SRC
   anelastic_q4_model.f90
   anelastic_q8_model.f90
   anelastic_cq8_b2_model.f90
+  anelastic_cq_model.f90
   anelastic_fq8_model.f90
   simulation_config.f90
   input_preflight.f90
   material.f90
+  anelastic_cq_material.f90
   plastic_material.f90
   pml.f90
   mpi3dbasic.f90
@@ -129,6 +131,16 @@ target_include_directories(fq8_effective_response_test PRIVATE
 add_test(NAME fq8_effective_response_unit
   COMMAND $<TARGET_FILE:fq8_effective_response_test>)
 
+add_executable(cq_coefficients_test
+  common.f90
+  anelastic_cq_model.f90
+  ../tests/cq_coefficients_test.f90)
+set_target_properties(cq_coefficients_test PROPERTIES
+  Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cq_test_modules)
+target_include_directories(cq_coefficients_test PRIVATE
+  ${CMAKE_CURRENT_BINARY_DIR}/cq_test_modules)
+add_test(NAME cq_coefficients_unit COMMAND $<TARGET_FILE:cq_coefficients_test>)
+
 # Intel MPI's mpirun wrapper supplies its runtime-library environment, while
 # the sibling mpiexec binary on this cluster does not.
 get_filename_component(MPIEXEC_DIRECTORY ${MPIEXEC_EXECUTABLE} DIRECTORY)
@@ -174,6 +186,35 @@ add_test(NAME cq8_b2_rejects_one_block
     -D INPUT=${CMAKE_CURRENT_SOURCE_DIR}/../inputfile/test_anelastic_cQ8_b2_invalid_nb1.in
     -D EXPECTED_CODE=CFG-CQ8-B2-002
     -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/run_expected_preflight_failure.cmake)
+
+add_test(NAME cq_mechanisms_4_through_8
+  COMMAND ${CMAKE_COMMAND}
+    -D MPIEXEC=${WQL3D_MPI_RUNNER}
+    -D EXE=$<TARGET_FILE:waveqlab3d>
+    -D INPUT=${CMAKE_CURRENT_SOURCE_DIR}/../inputfile/test_anelastic_cQ_dynamic.in
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/run_cq_mechanism_regression.cmake)
+
+add_test(NAME cq_dynamic_decomposition
+  COMMAND ${CMAKE_COMMAND}
+    -D MPIEXEC=${WQL3D_MPI_RUNNER}
+    -D EXE=$<TARGET_FILE:waveqlab3d>
+    -D INPUT=${CMAKE_CURRENT_SOURCE_DIR}/../inputfile/test_anelastic_cQ_dynamic.in
+    -D STATE_LABEL=cQ
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/run_q8_dynamic_regression.cmake)
+
+add_test(NAME cq_rejects_invalid_mechanism_counts
+  COMMAND ${CMAKE_COMMAND}
+    -D MPIEXEC=${WQL3D_MPI_RUNNER}
+    -D EXE=$<TARGET_FILE:waveqlab3d>
+    -D INPUT=${CMAKE_CURRENT_SOURCE_DIR}/../inputfile/test_anelastic_cQ_dynamic.in
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/run_cq_invalid_regression.cmake)
+
+add_test(NAME cq_dynamic_pml_decomposition
+  COMMAND ${CMAKE_COMMAND}
+    -D MPIEXEC=${WQL3D_MPI_RUNNER}
+    -D EXE=$<TARGET_FILE:waveqlab3d>
+    -D INPUT=${CMAKE_CURRENT_SOURCE_DIR}/../inputfile/test_anelastic_cQ_dynamic.in
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/run_cq_pml_regression.cmake)
 
 add_test(NAME q4_dynamic_decomposition
   COMMAND ${CMAKE_COMMAND}

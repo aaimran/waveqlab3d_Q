@@ -2,7 +2,7 @@
 
 WaveQLab3D is a code for 3D seismic wave propagation and earthquake rupture dynamics. It solves the elastic wave equation in curvilinear coordinates (i.e., complex geometries) with a possibly nonplanar frictional fault interface. The current version supports off-fault viscoplasticity, spatially variable elastic properties, and several friction laws (including rate-and-state and slip-weakening). The code is under development and is available under the MIT license. Authors include Kenneth Duru, Sam Bydlon, Eric Dunham, and Kyle Withers with parallelization by Hari Radhakrishnan.
 
-Supported attenuation response options currently include `anelastic`, `anelastic-Q`, `anelastic-Q8`, `anelastic-cQ8-b2`, `anelastic-Qf`, `constant-Q-4M`, `constant-Q-8M`, `frequency-Q-4M`, and `frequency-Q-8M`.
+Supported attenuation response options currently include `anelastic`, `anelastic-Q`, `anelastic-Q8`, `anelastic-cQ8-b2`, `anelastic-cQ`, `anelastic-Qf`, `constant-Q-4M`, `constant-Q-8M`, `frequency-Q-4M`, and `frequency-Q-8M`.
 
 For the fixed eight-mechanism constant-Q response, prefer explicit P- and
 S-wave quality factors in anelastic_Q8_list:
@@ -40,6 +40,35 @@ applies to block 1 and element 2 applies to block 2:
 
 The reference frequency, approximation band, and eight-mechanism weight method
 are shared by the blocks. Existing `anelastic-Q8` inputs and behavior are unchanged.
+
+The independent fitted constant-Q response is selected with `anelastic-cQ`.
+It requires two blocks, accepts 4 through 8 relaxation mechanisms, and keeps
+its configuration and runtime memory separate from the fixed Q8 responses:
+
+    &problem_list
+      response = 'anelastic-cQ'
+      nblocks = 2
+    /
+
+    &anelastic_cQ_list
+      Qs0 = 40.0, 100.0
+      Qp0 = 80.0, 180.0
+      fref = 1.0
+      fmin = 0.05
+      fmax = 20.0
+      n_mechanisms = 6
+      coefficient_policy = 'nnls-block-ps'
+      nnls_samples = 256
+      nnls_objective = 'relative-q'
+      nnls_tolerance = 1.0e-10
+      max_fit_error = 0.10
+    /
+
+Supported coefficient policies are `nnls-shared`, `nnls-block`,
+`nnls-block-ps`, and `fixed-q50`. The fixed table requires eight mechanisms;
+the NNLS policies support 4, 5, 6, 7, or 8. `max_fit_error` is the maximum
+allowed relative error over the requested frequency band and should be chosen
+to match the accuracy required by the simulation.
 
 Station output columns default to `t vx vy vz`. Their order can be changed in
 the `output_list` namelist; for example:
