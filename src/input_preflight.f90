@@ -167,11 +167,6 @@ contains
                 call issues%add(DIAG_ERROR,'CFG-CQ-002', &
                      'Response anelastic-cQ requires exactly two blocks.', &
                      section='problem_list',field='nblocks',suggestion='Set nblocks=2.')
-             else if (trim(adjustl(fd_type)) /= 'upwind') then
-                call issues%add(DIAG_ERROR,'CFG-CQ-003', &
-                     'Response anelastic-cQ currently requires fd_type=''upwind''.', &
-                     section='problem_list',field='fd_type', &
-                     suggestion='Use fd_type=''upwind''; other derivative kernels do not yet dispatch cQ.')
              else
                 call read_cq_parameters(infile,config%cq,stat,iomsg)
                 if (stat /= 0) then

@@ -216,6 +216,13 @@ add_test(NAME cq_dynamic_pml_decomposition
     -D INPUT=${CMAKE_CURRENT_SOURCE_DIR}/../inputfile/test_anelastic_cQ_dynamic.in
     -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/run_cq_pml_regression.cmake)
 
+add_test(NAME cq_traditional_and_drp_decomposition
+  COMMAND ${CMAKE_COMMAND}
+    -D MPIEXEC=${WQL3D_MPI_RUNNER}
+    -D EXE=$<TARGET_FILE:waveqlab3d>
+    -D INPUT=${CMAKE_CURRENT_SOURCE_DIR}/../inputfile/test_anelastic_cQ_dynamic.in
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/run_cq_fd_regression.cmake)
+
 add_test(NAME q4_dynamic_decomposition
   COMMAND ${CMAKE_COMMAND}
     -D MPIEXEC=${WQL3D_MPI_RUNNER}

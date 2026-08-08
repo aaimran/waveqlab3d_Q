@@ -69,6 +69,8 @@ Supported coefficient policies are `nnls-shared`, `nnls-block`,
 the NNLS policies support 4, 5, 6, 7, or 8. `max_fit_error` is the maximum
 allowed relative error over the requested frequency band and should be chosen
 to match the accuracy required by the simulation.
+The response supports `fd_type='traditional'`, `fd_type='upwind'`, and
+`fd_type='upwind_drp'` with the order combinations accepted by preflight.
 
 Station output columns default to `t vx vy vz`. Their order can be changed in
 the `output_list` namelist; for example:

@@ -6,8 +6,34 @@ module anelastic_cq_material
   implicit none
   private
   public :: init_anelastic_cq_properties, destroy_anelastic_cq_properties
+  public :: apply_anelastic_cq_strain
 
 contains
+
+  subroutine apply_anelastic_cq_strain(M,x,y,z,Dx,Dy,Dz,rate)
+    type(block_material), intent(inout) :: M
+    integer, intent(in) :: x,y,z
+    real(wp), intent(in) :: Dx(:),Dy(:),Dz(:)
+    real(wp), intent(inout) :: rate(:)
+    integer :: i,n
+    real(wp) :: tr,mu2,pm,sm,bulk
+    n=M%n_mechanism_cQ
+    rate(4)=rate(4)-sum(M%eta4cQ(x,y,z,1:n)); rate(5)=rate(5)-sum(M%eta5cQ(x,y,z,1:n))
+    rate(6)=rate(6)-sum(M%eta6cQ(x,y,z,1:n)); rate(7)=rate(7)-sum(M%eta7cQ(x,y,z,1:n))
+    rate(8)=rate(8)-sum(M%eta8cQ(x,y,z,1:n)); rate(9)=rate(9)-sum(M%eta9cQ(x,y,z,1:n))
+    tr=Dx(1)+Dy(2)+Dz(3); mu2=2.0_wp*M%M(x,y,z,2)
+    do i=1,n
+       sm=M%weight_s_cQ(i)*M%Qs_inv_cQ(x,y,z)
+       pm=M%weight_p_cQ(i)*M%Qp_inv_cQ(x,y,z)
+       bulk=(M%M(x,y,z,1)+mu2)*pm-mu2*sm
+       M%Deta4cQ(x,y,z,i)=M%Deta4cQ(x,y,z,i)+(mu2*sm*Dx(1)+bulk*tr-M%eta4cQ(x,y,z,i))/M%tau_cQ(i)
+       M%Deta5cQ(x,y,z,i)=M%Deta5cQ(x,y,z,i)+(mu2*sm*Dy(2)+bulk*tr-M%eta5cQ(x,y,z,i))/M%tau_cQ(i)
+       M%Deta6cQ(x,y,z,i)=M%Deta6cQ(x,y,z,i)+(mu2*sm*Dz(3)+bulk*tr-M%eta6cQ(x,y,z,i))/M%tau_cQ(i)
+       M%Deta7cQ(x,y,z,i)=M%Deta7cQ(x,y,z,i)+(M%M(x,y,z,2)*sm*(Dy(1)+Dx(2))-M%eta7cQ(x,y,z,i))/M%tau_cQ(i)
+       M%Deta8cQ(x,y,z,i)=M%Deta8cQ(x,y,z,i)+(M%M(x,y,z,2)*sm*(Dz(1)+Dx(3))-M%eta8cQ(x,y,z,i))/M%tau_cQ(i)
+       M%Deta9cQ(x,y,z,i)=M%Deta9cQ(x,y,z,i)+(M%M(x,y,z,2)*sm*(Dz(2)+Dy(3))-M%eta9cQ(x,y,z,i))/M%tau_cQ(i)
+    end do
+  end subroutine apply_anelastic_cq_strain
 
   subroutine init_anelastic_cq_properties(M,G,parameters,block_id)
     use mpi3dcomm, only : allocate_array_body

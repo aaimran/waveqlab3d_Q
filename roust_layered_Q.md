@@ -6,10 +6,10 @@ The additive `anelastic-cQ` response described here is implemented. It has a
 separate namelist, configuration object, fitted coefficients, material state,
 memory arrays, modulus correction, constitutive routines, diagnostics, and
 cleanup path. Mechanism counts 4 through 8 are supported and covered by
-parameterized coefficient and dynamic tests. The implemented response is
-currently restricted to `fd_type='upwind'`; preflight rejects other derivative
-kernels rather than running without attenuation. The established
-`anelastic-Q8` and `anelastic-cQ8-b2` numerical routines remain unchanged.
+parameterized coefficient and dynamic tests. Traditional, upwind, and
+upwind-DRP derivative kernels dispatch the independent cQ update. The
+established `anelastic-Q8` and `anelastic-cQ8-b2` numerical routines remain
+unchanged.
 
 ## Purpose
 

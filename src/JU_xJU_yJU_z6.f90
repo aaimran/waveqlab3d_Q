@@ -1,6 +1,7 @@
 module JU_xJU_yJU_z6
 
     use common, only : wp
+    use anelastic_cq_material, only : apply_anelastic_cq_strain
   implicit none
 
 contains
@@ -16385,6 +16386,7 @@ Ju_x(1:n) = (1.0_wp/hx)*Jq_xU(1:n) + (1.0_wp/hy)*Jr_xU(1:n) + (1.0_wp/hz)*Js_xU(
                                                             (M%weight_Q(i)*M%M(x,y,z,2)*M%Qs_inv_Q(x,y,z)*(DFz(2) + DFy(3)) - M%eta9Q(x,y,z,i)) / M%tau_Q(i) )
                                               end do
                                         end if
+                                        if (M%anelastic_cQ) call apply_anelastic_cq_strain(M,x,y,z,DFx,DFy,DFz,F%F%DF(x,y,z,:))
                                         if (M%anelastic_Q8) then
                                               F%F%DF(x, y, z, 4) = F%F%DF(x, y, z, 4) - (M%eta4Q8(x,y,z,1) + M%eta4Q8(x,y,z,2) + M%eta4Q8(x,y,z,3) + M%eta4Q8(x,y,z,4) &
                                                                                          + M%eta4Q8(x,y,z,5) + M%eta4Q8(x,y,z,6) + M%eta4Q8(x,y,z,7) + M%eta4Q8(x,y,z,8))
@@ -16596,6 +16598,7 @@ Ju_x(1:n) = (1.0_wp/hx)*Jq_xU(1:n) + (1.0_wp/hy)*Jr_xU(1:n) + (1.0_wp/hz)*Js_xU(
                                                             (M%weight_Q(i)*M%M(x,y,z,2)*M%Qs_inv_Q(x,y,z)*(DFz(2) + DFy(3)) - M%eta9Q(x,y,z,i)) / M%tau_Q(i) )
                                               end do
                                         end if
+                                        if (M%anelastic_cQ) call apply_anelastic_cq_strain(M,x,y,z,DFx,DFy,DFz,F%F%DF(x,y,z,:))
                                         if (M%anelastic_Q8) then
                                               F%F%DF(x, y, z, 4) = F%F%DF(x, y, z, 4) - (M%eta4Q8(x,y,z,1) + M%eta4Q8(x,y,z,2) + M%eta4Q8(x,y,z,3) + M%eta4Q8(x,y,z,4) &
                                                                                          + M%eta4Q8(x,y,z,5) + M%eta4Q8(x,y,z,6) + M%eta4Q8(x,y,z,7) + M%eta4Q8(x,y,z,8))
@@ -16903,7 +16906,8 @@ Ju_x(1:n) = (1.0_wp/hx)*Jq_xU(1:n) + (1.0_wp/hy)*Jr_xU(1:n) + (1.0_wp/hz)*Js_xU(
                             (M%weight_Q(i)*M%M(x,y,z,2)*M%Qs_inv_Q(x,y,z)*(DFz(2) + DFy(3)) - M%eta9Q(x,y,z,i)) / M%tau_Q(i) )
                     end do
                  end if
-                 if (M%anelastic_Q8) then
+                                        if (M%anelastic_cQ) call apply_anelastic_cq_strain(M,x,y,z,DFx,DFy,DFz,F%F%DF(x,y,z,:))
+                                        if (M%anelastic_Q8) then
                     F%F%DF(x, y, z, 4) = F%F%DF(x, y, z, 4) - (M%eta4Q8(x,y,z,1) + M%eta4Q8(x,y,z,2) + M%eta4Q8(x,y,z,3) + M%eta4Q8(x,y,z,4) &
                                                                + M%eta4Q8(x,y,z,5) + M%eta4Q8(x,y,z,6) + M%eta4Q8(x,y,z,7) + M%eta4Q8(x,y,z,8))
                     F%F%DF(x, y, z, 5) = F%F%DF(x, y, z, 5) - (M%eta5Q8(x,y,z,1) + M%eta5Q8(x,y,z,2) + M%eta5Q8(x,y,z,3) + M%eta5Q8(x,y,z,4) &
@@ -17058,7 +17062,8 @@ Ju_x(1:n) = (1.0_wp/hx)*Jq_xU(1:n) + (1.0_wp/hy)*Jr_xU(1:n) + (1.0_wp/hz)*Js_xU(
                                                              (M%weight_Q(i)*M%M(x,y,z,2)*M%Qs_inv_Q(x,y,z)*(DFz(2) + DFy(3)) - M%eta9Q(x,y,z,i)) / M%tau_Q(i) )
                                                   end do
                                          end if
-                                         if (M%anelastic_Q8) then
+                                        if (M%anelastic_cQ) call apply_anelastic_cq_strain(M,x,y,z,DFx,DFy,DFz,F%F%DF(x,y,z,:))
+                                        if (M%anelastic_Q8) then
                                                   F%F%DF(x, y, z, 4) = F%F%DF(x, y, z, 4) - (M%eta4Q8(x,y,z,1) + M%eta4Q8(x,y,z,2) + M%eta4Q8(x,y,z,3) + M%eta4Q8(x,y,z,4) &
                                                                                              + M%eta4Q8(x,y,z,5) + M%eta4Q8(x,y,z,6) + M%eta4Q8(x,y,z,7) + M%eta4Q8(x,y,z,8))
                                                   F%F%DF(x, y, z, 5) = F%F%DF(x, y, z, 5) - (M%eta5Q8(x,y,z,1) + M%eta5Q8(x,y,z,2) + M%eta5Q8(x,y,z,3) + M%eta5Q8(x,y,z,4) &
@@ -17284,7 +17289,8 @@ Ju_x(1:n) = (1.0_wp/hx)*Jq_xU(1:n) + (1.0_wp/hy)*Jr_xU(1:n) + (1.0_wp/hz)*Js_xU(
                                                              (M%weight_Q(i)*M%M(x,y,z,2)*M%Qs_inv_Q(x,y,z)*(DFz(2) + DFy(3)) - M%eta9Q(x,y,z,i)) / M%tau_Q(i) )
                                                   end do
                                          end if
-                                         if (M%anelastic_Q8) then
+                                        if (M%anelastic_cQ) call apply_anelastic_cq_strain(M,x,y,z,DFx,DFy,DFz,F%F%DF(x,y,z,:))
+                                        if (M%anelastic_Q8) then
                                                   F%F%DF(x, y, z, 4) = F%F%DF(x, y, z, 4) - (M%eta4Q8(x,y,z,1) + M%eta4Q8(x,y,z,2) + M%eta4Q8(x,y,z,3) + M%eta4Q8(x,y,z,4) &
                                                                                              + M%eta4Q8(x,y,z,5) + M%eta4Q8(x,y,z,6) + M%eta4Q8(x,y,z,7) + M%eta4Q8(x,y,z,8))
                                                   F%F%DF(x, y, z, 5) = F%F%DF(x, y, z, 5) - (M%eta5Q8(x,y,z,1) + M%eta5Q8(x,y,z,2) + M%eta5Q8(x,y,z,3) + M%eta5Q8(x,y,z,4) &
@@ -17594,7 +17600,8 @@ Ju_x(1:n) = (1.0_wp/hx)*Jq_xU(1:n) + (1.0_wp/hy)*Jr_xU(1:n) + (1.0_wp/hz)*Js_xU(
                                                              (M%weight_Q(i)*M%M(x,y,z,2)*M%Qs_inv_Q(x,y,z)*(DFz(2) + DFy(3)) - M%eta9Q(x,y,z,i)) / M%tau_Q(i) )
                                                   end do
                                          end if
-                                         if (M%anelastic_Q8) then
+                                        if (M%anelastic_cQ) call apply_anelastic_cq_strain(M,x,y,z,DFx,DFy,DFz,F%F%DF(x,y,z,:))
+                                        if (M%anelastic_Q8) then
                                                   F%F%DF(x, y, z, 4) = F%F%DF(x, y, z, 4) - (M%eta4Q8(x,y,z,1) + M%eta4Q8(x,y,z,2) + M%eta4Q8(x,y,z,3) + M%eta4Q8(x,y,z,4) &
                                                                                              + M%eta4Q8(x,y,z,5) + M%eta4Q8(x,y,z,6) + M%eta4Q8(x,y,z,7) + M%eta4Q8(x,y,z,8))
                                                   F%F%DF(x, y, z, 5) = F%F%DF(x, y, z, 5) - (M%eta5Q8(x,y,z,1) + M%eta5Q8(x,y,z,2) + M%eta5Q8(x,y,z,3) + M%eta5Q8(x,y,z,4) &
@@ -17820,7 +17827,8 @@ Ju_x(1:n) = (1.0_wp/hx)*Jq_xU(1:n) + (1.0_wp/hy)*Jr_xU(1:n) + (1.0_wp/hz)*Js_xU(
                                                              (M%weight_Q(i)*M%M(x,y,z,2)*M%Qs_inv_Q(x,y,z)*(DFz(2) + DFy(3)) - M%eta9Q(x,y,z,i)) / M%tau_Q(i) )
                                                   end do
                                          end if
-                                         if (M%anelastic_Q8) then
+                                        if (M%anelastic_cQ) call apply_anelastic_cq_strain(M,x,y,z,DFx,DFy,DFz,F%F%DF(x,y,z,:))
+                                        if (M%anelastic_Q8) then
                                                   F%F%DF(x, y, z, 4) = F%F%DF(x, y, z, 4) - (M%eta4Q8(x,y,z,1) + M%eta4Q8(x,y,z,2) + M%eta4Q8(x,y,z,3) + M%eta4Q8(x,y,z,4) &
                                                                                              + M%eta4Q8(x,y,z,5) + M%eta4Q8(x,y,z,6) + M%eta4Q8(x,y,z,7) + M%eta4Q8(x,y,z,8))
                                                   F%F%DF(x, y, z, 5) = F%F%DF(x, y, z, 5) - (M%eta5Q8(x,y,z,1) + M%eta5Q8(x,y,z,2) + M%eta5Q8(x,y,z,3) + M%eta5Q8(x,y,z,4) &
@@ -18132,7 +18140,8 @@ subroutine JJU_x4_interior_upwind(F, G, M, type_of_mesh)
                                                              (M%weight_Q(i)*M%M(x,y,z,2)*M%Qs_inv_Q(x,y,z)*(DFz(2) + DFy(3)) - M%eta9Q(x,y,z,i)) / M%tau_Q(i) )
                                                   end do
                                          end if
-                                         if (M%anelastic_Q8) then
+                                        if (M%anelastic_cQ) call apply_anelastic_cq_strain(M,x,y,z,DFx,DFy,DFz,F%F%DF(x,y,z,:))
+                                        if (M%anelastic_Q8) then
                                                   F%F%DF(x, y, z, 4) = F%F%DF(x, y, z, 4) - (M%eta4Q8(x,y,z,1) + M%eta4Q8(x,y,z,2) + M%eta4Q8(x,y,z,3) + M%eta4Q8(x,y,z,4) &
                                                                                              + M%eta4Q8(x,y,z,5) + M%eta4Q8(x,y,z,6) + M%eta4Q8(x,y,z,7) + M%eta4Q8(x,y,z,8))
                                                   F%F%DF(x, y, z, 5) = F%F%DF(x, y, z, 5) - (M%eta5Q8(x,y,z,1) + M%eta5Q8(x,y,z,2) + M%eta5Q8(x,y,z,3) + M%eta5Q8(x,y,z,4) &
@@ -18358,7 +18367,8 @@ subroutine JJU_x4_interior_upwind(F, G, M, type_of_mesh)
                                                              (M%weight_Q(i)*M%M(x,y,z,2)*M%Qs_inv_Q(x,y,z)*(DFz(2) + DFy(3)) - M%eta9Q(x,y,z,i)) / M%tau_Q(i) )
                                                   end do
                                          end if
-                                         if (M%anelastic_Q8) then
+                                        if (M%anelastic_cQ) call apply_anelastic_cq_strain(M,x,y,z,DFx,DFy,DFz,F%F%DF(x,y,z,:))
+                                        if (M%anelastic_Q8) then
                                                   F%F%DF(x, y, z, 4) = F%F%DF(x, y, z, 4) - (M%eta4Q8(x,y,z,1) + M%eta4Q8(x,y,z,2) + M%eta4Q8(x,y,z,3) + M%eta4Q8(x,y,z,4) &
                                                                                              + M%eta4Q8(x,y,z,5) + M%eta4Q8(x,y,z,6) + M%eta4Q8(x,y,z,7) + M%eta4Q8(x,y,z,8))
                                                   F%F%DF(x, y, z, 5) = F%F%DF(x, y, z, 5) - (M%eta5Q8(x,y,z,1) + M%eta5Q8(x,y,z,2) + M%eta5Q8(x,y,z,3) + M%eta5Q8(x,y,z,4) &
@@ -18685,7 +18695,8 @@ subroutine JJU_x4_interior_upwind(F, G, M, type_of_mesh)
                                      (M%weight_Q(i)*M%M(x,y,z,2)*M%Qs_inv_Q(x,y,z)*(DFz(2) + DFy(3)) - M%eta9Q(x,y,z,i)) / M%tau_Q(i) )
                           end do
                  end if
-                 if (M%anelastic_Q8) then
+                                        if (M%anelastic_cQ) call apply_anelastic_cq_strain(M,x,y,z,DFx,DFy,DFz,F%F%DF(x,y,z,:))
+                                        if (M%anelastic_Q8) then
                           F%F%DF(x, y, z, 4) = F%F%DF(x, y, z, 4) - (M%eta4Q8(x,y,z,1) + M%eta4Q8(x,y,z,2) + M%eta4Q8(x,y,z,3) + M%eta4Q8(x,y,z,4) &
                                                                      + M%eta4Q8(x,y,z,5) + M%eta4Q8(x,y,z,6) + M%eta4Q8(x,y,z,7) + M%eta4Q8(x,y,z,8))
                           F%F%DF(x, y, z, 5) = F%F%DF(x, y, z, 5) - (M%eta5Q8(x,y,z,1) + M%eta5Q8(x,y,z,2) + M%eta5Q8(x,y,z,3) + M%eta5Q8(x,y,z,4) &
@@ -18911,7 +18922,8 @@ subroutine JJU_x4_interior_upwind(F, G, M, type_of_mesh)
                                      (M%weight_Q(i)*M%M(x,y,z,2)*M%Qs_inv_Q(x,y,z)*(DFz(2) + DFy(3)) - M%eta9Q(x,y,z,i)) / M%tau_Q(i) )
                           end do
                  end if
-                 if (M%anelastic_Q8) then
+                                        if (M%anelastic_cQ) call apply_anelastic_cq_strain(M,x,y,z,DFx,DFy,DFz,F%F%DF(x,y,z,:))
+                                        if (M%anelastic_Q8) then
                           F%F%DF(x, y, z, 4) = F%F%DF(x, y, z, 4) - (M%eta4Q8(x,y,z,1) + M%eta4Q8(x,y,z,2) + M%eta4Q8(x,y,z,3) + M%eta4Q8(x,y,z,4) &
                                                                      + M%eta4Q8(x,y,z,5) + M%eta4Q8(x,y,z,6) + M%eta4Q8(x,y,z,7) + M%eta4Q8(x,y,z,8))
                           F%F%DF(x, y, z, 5) = F%F%DF(x, y, z, 5) - (M%eta5Q8(x,y,z,1) + M%eta5Q8(x,y,z,2) + M%eta5Q8(x,y,z,3) + M%eta5Q8(x,y,z,4) &
@@ -19241,7 +19253,8 @@ subroutine JJU_x4_interior_upwind(F, G, M, type_of_mesh)
                                     (M%weight_Q(i)*M%M(x,y,z,2)*M%Qs_inv_Q(x,y,z)*(DFz(2) + DFy(3)) - M%eta9Q(x,y,z,i)) / M%tau_Q(i) )
                          end do
                 end if
-                if (M%anelastic_Q8) then
+                                        if (M%anelastic_cQ) call apply_anelastic_cq_strain(M,x,y,z,DFx,DFy,DFz,F%F%DF(x,y,z,:))
+                                        if (M%anelastic_Q8) then
                          F%F%DF(x, y, z, 4) = F%F%DF(x, y, z, 4) - (M%eta4Q8(x,y,z,1) + M%eta4Q8(x,y,z,2) + M%eta4Q8(x,y,z,3) + M%eta4Q8(x,y,z,4) &
                                                                     + M%eta4Q8(x,y,z,5) + M%eta4Q8(x,y,z,6) + M%eta4Q8(x,y,z,7) + M%eta4Q8(x,y,z,8))
                          F%F%DF(x, y, z, 5) = F%F%DF(x, y, z, 5) - (M%eta5Q8(x,y,z,1) + M%eta5Q8(x,y,z,2) + M%eta5Q8(x,y,z,3) + M%eta5Q8(x,y,z,4) &
@@ -19467,7 +19480,8 @@ subroutine JJU_x4_interior_upwind(F, G, M, type_of_mesh)
                                     (M%weight_Q(i)*M%M(x,y,z,2)*M%Qs_inv_Q(x,y,z)*(DFz(2) + DFy(3)) - M%eta9Q(x,y,z,i)) / M%tau_Q(i) )
                          end do
                 end if
-                if (M%anelastic_Q8) then
+                                        if (M%anelastic_cQ) call apply_anelastic_cq_strain(M,x,y,z,DFx,DFy,DFz,F%F%DF(x,y,z,:))
+                                        if (M%anelastic_Q8) then
                          F%F%DF(x, y, z, 4) = F%F%DF(x, y, z, 4) - (M%eta4Q8(x,y,z,1) + M%eta4Q8(x,y,z,2) + M%eta4Q8(x,y,z,3) + M%eta4Q8(x,y,z,4) &
                                                                     + M%eta4Q8(x,y,z,5) + M%eta4Q8(x,y,z,6) + M%eta4Q8(x,y,z,7) + M%eta4Q8(x,y,z,8))
                          F%F%DF(x, y, z, 5) = F%F%DF(x, y, z, 5) - (M%eta5Q8(x,y,z,1) + M%eta5Q8(x,y,z,2) + M%eta5Q8(x,y,z,3) + M%eta5Q8(x,y,z,4) &
@@ -19780,7 +19794,8 @@ subroutine JJU_x4_interior_upwind(F, G, M, type_of_mesh)
                                                              (M%weight_Q(i)*M%M(x,y,z,2)*M%Qs_inv_Q(x,y,z)*(DFz(2) + DFy(3)) - M%eta9Q(x,y,z,i)) / M%tau_Q(i) )
                                                   end do
                                          end if
-                                         if (M%anelastic_Q8) then
+                                        if (M%anelastic_cQ) call apply_anelastic_cq_strain(M,x,y,z,DFx,DFy,DFz,F%F%DF(x,y,z,:))
+                                        if (M%anelastic_Q8) then
                                                   F%F%DF(x, y, z, 4) = F%F%DF(x, y, z, 4) - (M%eta4Q8(x,y,z,1) + M%eta4Q8(x,y,z,2) + M%eta4Q8(x,y,z,3) + M%eta4Q8(x,y,z,4) &
                                                                                              + M%eta4Q8(x,y,z,5) + M%eta4Q8(x,y,z,6) + M%eta4Q8(x,y,z,7) + M%eta4Q8(x,y,z,8))
                                                   F%F%DF(x, y, z, 5) = F%F%DF(x, y, z, 5) - (M%eta5Q8(x,y,z,1) + M%eta5Q8(x,y,z,2) + M%eta5Q8(x,y,z,3) + M%eta5Q8(x,y,z,4) &
@@ -20006,7 +20021,8 @@ subroutine JJU_x4_interior_upwind(F, G, M, type_of_mesh)
                                                              (M%weight_Q(i)*M%M(x,y,z,2)*M%Qs_inv_Q(x,y,z)*(DFz(2) + DFy(3)) - M%eta9Q(x,y,z,i)) / M%tau_Q(i) )
                                                   end do
                                          end if
-                                         if (M%anelastic_Q8) then
+                                        if (M%anelastic_cQ) call apply_anelastic_cq_strain(M,x,y,z,DFx,DFy,DFz,F%F%DF(x,y,z,:))
+                                        if (M%anelastic_Q8) then
                                                   F%F%DF(x, y, z, 4) = F%F%DF(x, y, z, 4) - (M%eta4Q8(x,y,z,1) + M%eta4Q8(x,y,z,2) + M%eta4Q8(x,y,z,3) + M%eta4Q8(x,y,z,4) &
                                                                                              + M%eta4Q8(x,y,z,5) + M%eta4Q8(x,y,z,6) + M%eta4Q8(x,y,z,7) + M%eta4Q8(x,y,z,8))
                                                   F%F%DF(x, y, z, 5) = F%F%DF(x, y, z, 5) - (M%eta5Q8(x,y,z,1) + M%eta5Q8(x,y,z,2) + M%eta5Q8(x,y,z,3) + M%eta5Q8(x,y,z,4) &
@@ -20323,7 +20339,8 @@ subroutine JJU_x4_interior_upwind(F, G, M, type_of_mesh)
                                                              (M%weight_Q(i)*M%M(x,y,z,2)*M%Qs_inv_Q(x,y,z)*(DFz(2) + DFy(3)) - M%eta9Q(x,y,z,i)) / M%tau_Q(i) )
                                                   end do
                                          end if
-                                         if (M%anelastic_Q8) then
+                                        if (M%anelastic_cQ) call apply_anelastic_cq_strain(M,x,y,z,DFx,DFy,DFz,F%F%DF(x,y,z,:))
+                                        if (M%anelastic_Q8) then
                                                   F%F%DF(x, y, z, 4) = F%F%DF(x, y, z, 4) - (M%eta4Q8(x,y,z,1) + M%eta4Q8(x,y,z,2) + M%eta4Q8(x,y,z,3) + M%eta4Q8(x,y,z,4) &
                                                                                              + M%eta4Q8(x,y,z,5) + M%eta4Q8(x,y,z,6) + M%eta4Q8(x,y,z,7) + M%eta4Q8(x,y,z,8))
                                                   F%F%DF(x, y, z, 5) = F%F%DF(x, y, z, 5) - (M%eta5Q8(x,y,z,1) + M%eta5Q8(x,y,z,2) + M%eta5Q8(x,y,z,3) + M%eta5Q8(x,y,z,4) &
@@ -20549,7 +20566,8 @@ subroutine JJU_x4_interior_upwind(F, G, M, type_of_mesh)
                                                              (M%weight_Q(i)*M%M(x,y,z,2)*M%Qs_inv_Q(x,y,z)*(DFz(2) + DFy(3)) - M%eta9Q(x,y,z,i)) / M%tau_Q(i) )
                                                   end do
                                          end if
-                                         if (M%anelastic_Q8) then
+                                        if (M%anelastic_cQ) call apply_anelastic_cq_strain(M,x,y,z,DFx,DFy,DFz,F%F%DF(x,y,z,:))
+                                        if (M%anelastic_Q8) then
                                                   F%F%DF(x, y, z, 4) = F%F%DF(x, y, z, 4) - (M%eta4Q8(x,y,z,1) + M%eta4Q8(x,y,z,2) + M%eta4Q8(x,y,z,3) + M%eta4Q8(x,y,z,4) &
                                                                                              + M%eta4Q8(x,y,z,5) + M%eta4Q8(x,y,z,6) + M%eta4Q8(x,y,z,7) + M%eta4Q8(x,y,z,8))
                                                   F%F%DF(x, y, z, 5) = F%F%DF(x, y, z, 5) - (M%eta5Q8(x,y,z,1) + M%eta5Q8(x,y,z,2) + M%eta5Q8(x,y,z,3) + M%eta5Q8(x,y,z,4) &
@@ -20865,7 +20883,8 @@ subroutine JJU_x4_interior_upwind(F, G, M, type_of_mesh)
                                                              (M%weight_Q(i)*M%M(x,y,z,2)*M%Qs_inv_Q(x,y,z)*(DFz(2) + DFy(3)) - M%eta9Q(x,y,z,i)) / M%tau_Q(i) )
                                                   end do
                                          end if
-                                         if (M%anelastic_Q8) then
+                                        if (M%anelastic_cQ) call apply_anelastic_cq_strain(M,x,y,z,DFx,DFy,DFz,F%F%DF(x,y,z,:))
+                                        if (M%anelastic_Q8) then
                                                   F%F%DF(x, y, z, 4) = F%F%DF(x, y, z, 4) - (M%eta4Q8(x,y,z,1) + M%eta4Q8(x,y,z,2) + M%eta4Q8(x,y,z,3) + M%eta4Q8(x,y,z,4) &
                                                                                              + M%eta4Q8(x,y,z,5) + M%eta4Q8(x,y,z,6) + M%eta4Q8(x,y,z,7) + M%eta4Q8(x,y,z,8))
                                                   F%F%DF(x, y, z, 5) = F%F%DF(x, y, z, 5) - (M%eta5Q8(x,y,z,1) + M%eta5Q8(x,y,z,2) + M%eta5Q8(x,y,z,3) + M%eta5Q8(x,y,z,4) &
@@ -21087,7 +21106,8 @@ subroutine JJU_x4_interior_upwind(F, G, M, type_of_mesh)
                             (M%weight_Q(i)*M%M(x,y,z,2)*M%Qs_inv_Q(x,y,z)*(DFz(2) + DFy(3)) - M%eta9Q(x,y,z,i)) / M%tau_Q(i) )
                     end do
                  end if
-                 if (M%anelastic_Q8) then
+                                        if (M%anelastic_cQ) call apply_anelastic_cq_strain(M,x,y,z,DFx,DFy,DFz,F%F%DF(x,y,z,:))
+                                        if (M%anelastic_Q8) then
                     F%F%DF(x, y, z, 4) = F%F%DF(x, y, z, 4) - (M%eta4Q8(x,y,z,1) + M%eta4Q8(x,y,z,2) + M%eta4Q8(x,y,z,3) + M%eta4Q8(x,y,z,4) &
                                                                + M%eta4Q8(x,y,z,5) + M%eta4Q8(x,y,z,6) + M%eta4Q8(x,y,z,7) + M%eta4Q8(x,y,z,8))
                     F%F%DF(x, y, z, 5) = F%F%DF(x, y, z, 5) - (M%eta5Q8(x,y,z,1) + M%eta5Q8(x,y,z,2) + M%eta5Q8(x,y,z,3) + M%eta5Q8(x,y,z,4) &
@@ -21401,7 +21421,8 @@ case('curvilinear') ! locked or welded interface
                        (M%weight_Q(i)*M%M(x,y,z,2)*M%Qs_inv_Q(x,y,z)*(DFz(2) + DFy(3)) - M%eta9Q(x,y,z,i)) / M%tau_Q(i) )
                end do
             end if
-            if (M%anelastic_Q8) then
+                                        if (M%anelastic_cQ) call apply_anelastic_cq_strain(M,x,y,z,DFx,DFy,DFz,F%F%DF(x,y,z,:))
+                                        if (M%anelastic_Q8) then
                F%F%DF(x, y, z, 4) = F%F%DF(x, y, z, 4) - (M%eta4Q8(x,y,z,1) + M%eta4Q8(x,y,z,2) + M%eta4Q8(x,y,z,3) + M%eta4Q8(x,y,z,4) &
                                                           + M%eta4Q8(x,y,z,5) + M%eta4Q8(x,y,z,6) + M%eta4Q8(x,y,z,7) + M%eta4Q8(x,y,z,8))
                F%F%DF(x, y, z, 5) = F%F%DF(x, y, z, 5) - (M%eta5Q8(x,y,z,1) + M%eta5Q8(x,y,z,2) + M%eta5Q8(x,y,z,3) + M%eta5Q8(x,y,z,4) &
@@ -21627,7 +21648,8 @@ case('cartesian') ! carteian mesh
                        (M%weight_Q(i)*M%M(x,y,z,2)*M%Qs_inv_Q(x,y,z)*(DFz(2) + DFy(3)) - M%eta9Q(x,y,z,i)) / M%tau_Q(i) )
                end do
             end if
-            if (M%anelastic_Q8) then
+                                        if (M%anelastic_cQ) call apply_anelastic_cq_strain(M,x,y,z,DFx,DFy,DFz,F%F%DF(x,y,z,:))
+                                        if (M%anelastic_Q8) then
                F%F%DF(x, y, z, 4) = F%F%DF(x, y, z, 4) - (M%eta4Q8(x,y,z,1) + M%eta4Q8(x,y,z,2) + M%eta4Q8(x,y,z,3) + M%eta4Q8(x,y,z,4) &
                                                           + M%eta4Q8(x,y,z,5) + M%eta4Q8(x,y,z,6) + M%eta4Q8(x,y,z,7) + M%eta4Q8(x,y,z,8))
                F%F%DF(x, y, z, 5) = F%F%DF(x, y, z, 5) - (M%eta5Q8(x,y,z,1) + M%eta5Q8(x,y,z,2) + M%eta5Q8(x,y,z,3) + M%eta5Q8(x,y,z,4) &
@@ -21939,7 +21961,8 @@ do z = mz, pz
                     (M%weight_Q(i)*M%M(x,y,z,2)*M%Qs_inv_Q(x,y,z)*(DFz(2) + DFy(3)) - M%eta9Q(x,y,z,i)) / M%tau_Q(i) )
             end do
          end if
-         if (M%anelastic_Q8) then
+                                        if (M%anelastic_cQ) call apply_anelastic_cq_strain(M,x,y,z,DFx,DFy,DFz,F%F%DF(x,y,z,:))
+                                        if (M%anelastic_Q8) then
             F%F%DF(x, y, z, 4) = F%F%DF(x, y, z, 4) - (M%eta4Q8(x,y,z,1) + M%eta4Q8(x,y,z,2) + M%eta4Q8(x,y,z,3) + M%eta4Q8(x,y,z,4) &
                                                        + M%eta4Q8(x,y,z,5) + M%eta4Q8(x,y,z,6) + M%eta4Q8(x,y,z,7) + M%eta4Q8(x,y,z,8))
             F%F%DF(x, y, z, 5) = F%F%DF(x, y, z, 5) - (M%eta5Q8(x,y,z,1) + M%eta5Q8(x,y,z,2) + M%eta5Q8(x,y,z,3) + M%eta5Q8(x,y,z,4) &
@@ -22157,7 +22180,8 @@ do z = mz, pz
                     (M%weight_Q(i)*M%M(x,y,z,2)*M%Qs_inv_Q(x,y,z)*(DFz(2) + DFy(3)) - M%eta9Q(x,y,z,i)) / M%tau_Q(i) )
             end do
          end if
-         if (M%anelastic_Q8) then
+                                        if (M%anelastic_cQ) call apply_anelastic_cq_strain(M,x,y,z,DFx,DFy,DFz,F%F%DF(x,y,z,:))
+                                        if (M%anelastic_Q8) then
             F%F%DF(x, y, z, 4) = F%F%DF(x, y, z, 4) - (M%eta4Q8(x,y,z,1) + M%eta4Q8(x,y,z,2) + M%eta4Q8(x,y,z,3) + M%eta4Q8(x,y,z,4) &
                                                        + M%eta4Q8(x,y,z,5) + M%eta4Q8(x,y,z,6) + M%eta4Q8(x,y,z,7) + M%eta4Q8(x,y,z,8))
             F%F%DF(x, y, z, 5) = F%F%DF(x, y, z, 5) - (M%eta5Q8(x,y,z,1) + M%eta5Q8(x,y,z,2) + M%eta5Q8(x,y,z,3) + M%eta5Q8(x,y,z,4) &
@@ -22466,7 +22490,8 @@ do z = mz, pz
                     (M%weight_Q(i)*M%M(x,y,z,2)*M%Qs_inv_Q(x,y,z)*(DFz(2) + DFy(3)) - M%eta9Q(x,y,z,i)) / M%tau_Q(i) )
             end do
          end if
-         if (M%anelastic_Q8) then
+                                        if (M%anelastic_cQ) call apply_anelastic_cq_strain(M,x,y,z,DFx,DFy,DFz,F%F%DF(x,y,z,:))
+                                        if (M%anelastic_Q8) then
             F%F%DF(x, y, z, 4) = F%F%DF(x, y, z, 4) - (M%eta4Q8(x,y,z,1) + M%eta4Q8(x,y,z,2) + M%eta4Q8(x,y,z,3) + M%eta4Q8(x,y,z,4) &
                                                        + M%eta4Q8(x,y,z,5) + M%eta4Q8(x,y,z,6) + M%eta4Q8(x,y,z,7) + M%eta4Q8(x,y,z,8))
             F%F%DF(x, y, z, 5) = F%F%DF(x, y, z, 5) - (M%eta5Q8(x,y,z,1) + M%eta5Q8(x,y,z,2) + M%eta5Q8(x,y,z,3) + M%eta5Q8(x,y,z,4) &
@@ -22684,7 +22709,8 @@ do z = mz, pz
                     (M%weight_Q(i)*M%M(x,y,z,2)*M%Qs_inv_Q(x,y,z)*(DFz(2) + DFy(3)) - M%eta9Q(x,y,z,i)) / M%tau_Q(i) )
             end do
          end if
-         if (M%anelastic_Q8) then
+                                        if (M%anelastic_cQ) call apply_anelastic_cq_strain(M,x,y,z,DFx,DFy,DFz,F%F%DF(x,y,z,:))
+                                        if (M%anelastic_Q8) then
             F%F%DF(x, y, z, 4) = F%F%DF(x, y, z, 4) - (M%eta4Q8(x,y,z,1) + M%eta4Q8(x,y,z,2) + M%eta4Q8(x,y,z,3) + M%eta4Q8(x,y,z,4) &
                                                        + M%eta4Q8(x,y,z,5) + M%eta4Q8(x,y,z,6) + M%eta4Q8(x,y,z,7) + M%eta4Q8(x,y,z,8))
             F%F%DF(x, y, z, 5) = F%F%DF(x, y, z, 5) - (M%eta5Q8(x,y,z,1) + M%eta5Q8(x,y,z,2) + M%eta5Q8(x,y,z,3) + M%eta5Q8(x,y,z,4) &
@@ -22999,7 +23025,8 @@ end select
                                                              (M%weight_Q(i)*M%M(x,y,z,2)*M%Qs_inv_Q(x,y,z)*(DFz(2) + DFy(3)) - M%eta9Q(x,y,z,i)) / M%tau_Q(i) )
                                                   end do
                                          end if
-                                         if (M%anelastic_Q8) then
+                                        if (M%anelastic_cQ) call apply_anelastic_cq_strain(M,x,y,z,DFx,DFy,DFz,F%F%DF(x,y,z,:))
+                                        if (M%anelastic_Q8) then
                                                   F%F%DF(x, y, z, 4) = F%F%DF(x, y, z, 4) - (M%eta4Q8(x,y,z,1) + M%eta4Q8(x,y,z,2) + M%eta4Q8(x,y,z,3) + M%eta4Q8(x,y,z,4) &
                                                                                              + M%eta4Q8(x,y,z,5) + M%eta4Q8(x,y,z,6) + M%eta4Q8(x,y,z,7) + M%eta4Q8(x,y,z,8))
                                                   F%F%DF(x, y, z, 5) = F%F%DF(x, y, z, 5) - (M%eta5Q8(x,y,z,1) + M%eta5Q8(x,y,z,2) + M%eta5Q8(x,y,z,3) + M%eta5Q8(x,y,z,4) &
@@ -23222,7 +23249,8 @@ end select
                             (M%weight_Q(i)*M%M(x,y,z,2)*M%Qs_inv_Q(x,y,z)*(DFz(2) + DFy(3)) - M%eta9Q(x,y,z,i)) / M%tau_Q(i) )
                     end do
                  end if
-                 if (M%anelastic_Q8) then
+                                        if (M%anelastic_cQ) call apply_anelastic_cq_strain(M,x,y,z,DFx,DFy,DFz,F%F%DF(x,y,z,:))
+                                        if (M%anelastic_Q8) then
                     F%F%DF(x, y, z, 4) = F%F%DF(x, y, z, 4) - (M%eta4Q8(x,y,z,1) + M%eta4Q8(x,y,z,2) + M%eta4Q8(x,y,z,3) + M%eta4Q8(x,y,z,4) &
                                                                + M%eta4Q8(x,y,z,5) + M%eta4Q8(x,y,z,6) + M%eta4Q8(x,y,z,7) + M%eta4Q8(x,y,z,8))
                     F%F%DF(x, y, z, 5) = F%F%DF(x, y, z, 5) - (M%eta5Q8(x,y,z,1) + M%eta5Q8(x,y,z,2) + M%eta5Q8(x,y,z,3) + M%eta5Q8(x,y,z,4) &
@@ -23536,7 +23564,8 @@ end select
                                                              (M%weight_Q(i)*M%M(x,y,z,2)*M%Qs_inv_Q(x,y,z)*(DFz(2) + DFy(3)) - M%eta9Q(x,y,z,i)) / M%tau_Q(i) )
                                                   end do
                                          end if
-                                         if (M%anelastic_Q8) then
+                                        if (M%anelastic_cQ) call apply_anelastic_cq_strain(M,x,y,z,DFx,DFy,DFz,F%F%DF(x,y,z,:))
+                                        if (M%anelastic_Q8) then
                                                   F%F%DF(x, y, z, 4) = F%F%DF(x, y, z, 4) - (M%eta4Q8(x,y,z,1) + M%eta4Q8(x,y,z,2) + M%eta4Q8(x,y,z,3) + M%eta4Q8(x,y,z,4) &
                                                                                              + M%eta4Q8(x,y,z,5) + M%eta4Q8(x,y,z,6) + M%eta4Q8(x,y,z,7) + M%eta4Q8(x,y,z,8))
                                                   F%F%DF(x, y, z, 5) = F%F%DF(x, y, z, 5) - (M%eta5Q8(x,y,z,1) + M%eta5Q8(x,y,z,2) + M%eta5Q8(x,y,z,3) + M%eta5Q8(x,y,z,4) &
@@ -23763,7 +23792,8 @@ end select
                                                              (M%weight_Q(i)*M%M(x,y,z,2)*M%Qs_inv_Q(x,y,z)*(DFz(2) + DFy(3)) - M%eta9Q(x,y,z,i)) / M%tau_Q(i) )
                                                   end do
                                          end if
-                                         if (M%anelastic_Q8) then
+                                        if (M%anelastic_cQ) call apply_anelastic_cq_strain(M,x,y,z,DFx,DFy,DFz,F%F%DF(x,y,z,:))
+                                        if (M%anelastic_Q8) then
                                                   F%F%DF(x, y, z, 4) = F%F%DF(x, y, z, 4) - (M%eta4Q8(x,y,z,1) + M%eta4Q8(x,y,z,2) + M%eta4Q8(x,y,z,3) + M%eta4Q8(x,y,z,4) &
                                                                                              + M%eta4Q8(x,y,z,5) + M%eta4Q8(x,y,z,6) + M%eta4Q8(x,y,z,7) + M%eta4Q8(x,y,z,8))
                                                   F%F%DF(x, y, z, 5) = F%F%DF(x, y, z, 5) - (M%eta5Q8(x,y,z,1) + M%eta5Q8(x,y,z,2) + M%eta5Q8(x,y,z,3) + M%eta5Q8(x,y,z,4) &
@@ -24080,7 +24110,8 @@ end select
                                                              (M%weight_Q(i)*M%M(x,y,z,2)*M%Qs_inv_Q(x,y,z)*(DFz(2) + DFy(3)) - M%eta9Q(x,y,z,i)) / M%tau_Q(i) )
                                                   end do
                                          end if
-                                         if (M%anelastic_Q8) then
+                                        if (M%anelastic_cQ) call apply_anelastic_cq_strain(M,x,y,z,DFx,DFy,DFz,F%F%DF(x,y,z,:))
+                                        if (M%anelastic_Q8) then
                                                   F%F%DF(x, y, z, 4) = F%F%DF(x, y, z, 4) - (M%eta4Q8(x,y,z,1) + M%eta4Q8(x,y,z,2) + M%eta4Q8(x,y,z,3) + M%eta4Q8(x,y,z,4) &
                                                                                              + M%eta4Q8(x,y,z,5) + M%eta4Q8(x,y,z,6) + M%eta4Q8(x,y,z,7) + M%eta4Q8(x,y,z,8))
                                                   F%F%DF(x, y, z, 5) = F%F%DF(x, y, z, 5) - (M%eta5Q8(x,y,z,1) + M%eta5Q8(x,y,z,2) + M%eta5Q8(x,y,z,3) + M%eta5Q8(x,y,z,4) &
@@ -24464,7 +24495,8 @@ end select
                                                              (M%weight_Q(i)*M%M(x,y,z,2)*M%Qs_inv_Q(x,y,z)*(DFz(2) + DFy(3)) - M%eta9Q(x,y,z,i)) / M%tau_Q(i) )
                                                   end do
                                          end if
-                                         if (M%anelastic_Q8) then
+                                        if (M%anelastic_cQ) call apply_anelastic_cq_strain(M,x,y,z,DFx,DFy,DFz,F%F%DF(x,y,z,:))
+                                        if (M%anelastic_Q8) then
                                                   F%F%DF(x, y, z, 4) = F%F%DF(x, y, z, 4) - (M%eta4Q8(x,y,z,1) + M%eta4Q8(x,y,z,2) + M%eta4Q8(x,y,z,3) + M%eta4Q8(x,y,z,4) &
                                                                                              + M%eta4Q8(x,y,z,5) + M%eta4Q8(x,y,z,6) + M%eta4Q8(x,y,z,7) + M%eta4Q8(x,y,z,8))
                                                   F%F%DF(x, y, z, 5) = F%F%DF(x, y, z, 5) - (M%eta5Q8(x,y,z,1) + M%eta5Q8(x,y,z,2) + M%eta5Q8(x,y,z,3) + M%eta5Q8(x,y,z,4) &
@@ -24686,7 +24718,8 @@ end select
                             (M%weight_Q(i)*M%M(x,y,z,2)*M%Qs_inv_Q(x,y,z)*(DFz(2) + DFy(3)) - M%eta9Q(x,y,z,i)) / M%tau_Q(i) )
                     end do
                  end if
-                 if (M%anelastic_Q8) then
+                                        if (M%anelastic_cQ) call apply_anelastic_cq_strain(M,x,y,z,DFx,DFy,DFz,F%F%DF(x,y,z,:))
+                                        if (M%anelastic_Q8) then
                     F%F%DF(x, y, z, 4) = F%F%DF(x, y, z, 4) - (M%eta4Q8(x,y,z,1) + M%eta4Q8(x,y,z,2) + M%eta4Q8(x,y,z,3) + M%eta4Q8(x,y,z,4) &
                                                                + M%eta4Q8(x,y,z,5) + M%eta4Q8(x,y,z,6) + M%eta4Q8(x,y,z,7) + M%eta4Q8(x,y,z,8))
                     F%F%DF(x, y, z, 5) = F%F%DF(x, y, z, 5) - (M%eta5Q8(x,y,z,1) + M%eta5Q8(x,y,z,2) + M%eta5Q8(x,y,z,3) + M%eta5Q8(x,y,z,4) &
