@@ -45,6 +45,7 @@ contains
     real(wp), parameter :: pi=3.141592653589793_wp
     real(wp) :: wref,val_s,val_p,vs,vp,mu_s,mu_p,max_s,max_p
     integer :: i,j,k,l,n
+    character(len=256) :: fit_message
 
     if (M%anelastic_cQ .or. allocated(M%eta4cQ)) &
          call error('anelastic-cQ material is already initialized','init_anelastic_cq_properties')
@@ -63,8 +64,12 @@ contains
          parameters%fmin,parameters%fmax,max_s)
     call cq_max_relative_error(M%Qp0_cQ,M%tau_cQ,M%weight_p_cQ, &
          parameters%fmin,parameters%fmax,max_p)
-    if (max(max_s,max_p) > parameters%max_fit_error) &
-         call error('anelastic-cQ fitted response exceeds max_fit_error','init_anelastic_cq_properties')
+    if (max(max_s,max_p) > parameters%max_fit_error) then
+       write(fit_message,'(A,ES10.3,A,ES10.3,A,ES10.3)') &
+            'anelastic-cQ fitted response exceeds max_fit_error: S=',max_s, &
+            ', P=',max_p,', limit=',parameters%max_fit_error
+       call error(trim(fit_message),'init_anelastic_cq_properties')
+    end if
 
     call allocate_array_body(M%Qp_inv_cQ,G%C,ghost_nodes=.true.)
     call allocate_array_body(M%Qs_inv_cQ,G%C,ghost_nodes=.true.)

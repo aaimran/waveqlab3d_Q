@@ -110,9 +110,19 @@ contains
          error stop 'invalid anelastic-cQ coefficient array extent'
     taumin=1.0_wp/(2.0_wp*pi*parameters%fmax)
     taumax=1.0_wp/(2.0_wp*pi*parameters%fmin)
-    do k=1,n
-       tau(k)=exp(log(taumin)+(2.0_wp*k-1.0_wp)/(2.0_wp*n)*log(taumax/taumin))
-    end do
+    if (trim(parameters%coefficient_policy) == 'fixed-q50') then
+       ! Preserve the relaxation times associated with the legacy fixed table.
+       do k=1,n
+          tau(k)=exp(log(taumin)+(2.0_wp*k-1.0_wp)/(2.0_wp*n)*log(taumax/taumin))
+       end do
+    else
+       ! Include both requested band edges in an NNLS fit.  Placing every
+       ! mechanism strictly inside the band leaves the edge response
+       ! under-resolved, producing about 12% error even with eight mechanisms.
+       do k=1,n
+          tau(k)=exp(log(taumin)+real(k-1,wp)/real(n-1,wp)*log(taumax/taumin))
+       end do
+    end if
     select case(trim(parameters%coefficient_policy))
     case('fixed-q50')
        weight_s=[1.50589707_wp,0.0_wp,0.52793567_wp,0.53065494_wp, &
@@ -192,7 +202,11 @@ contains
     real(wp) :: taumin,taumax
     taumin=1.0_wp/(2.0_wp*pi*parameters%fmax)
     taumax=1.0_wp/(2.0_wp*pi*parameters%fmin)
-    limit=2.0_wp*exp(log(taumin)+1.0_wp/(2.0_wp*parameters%n_mechanisms)*log(taumax/taumin))
+    if (trim(parameters%coefficient_policy) == 'fixed-q50') then
+       limit=2.0_wp*exp(log(taumin)+1.0_wp/(2.0_wp*parameters%n_mechanisms)*log(taumax/taumin))
+    else
+       limit=2.0_wp*taumin
+    end if
   end function cq_relaxation_dt_limit
 
 end module anelastic_cq_model

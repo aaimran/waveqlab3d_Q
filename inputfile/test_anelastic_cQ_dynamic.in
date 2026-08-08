@@ -14,9 +14,9 @@ waveqlab3d input file: independent configurable constant-Q dynamics regression
  btp(2)%pml_lqrs=F,F,F, btp(2)%pml_rqrs=F,F,F, btp(2)%npml=0
 /
 &anelastic_cQ_list
- Qs0=40d0,100d0, Qp0=80d0,180d0, fref=1d0, fmin=0.05d0, fmax=20d0,
+ Qs0=40d0,120d0, Qp0=69.3d0,155.9d0, fref=1d0, fmin=0.05d0, fmax=20d0,
  n_mechanisms=8, nnls_samples=256, coefficient_policy='nnls-block-ps',
- nnls_objective='relative-q', nnls_tolerance=1d-10, max_fit_error=0.50d0
+ nnls_objective='relative-q', nnls_tolerance=1d-10, max_fit_error=0.10d0
 /
 &moment_list
  use_moment_tensor=T, order=4
