@@ -517,7 +517,7 @@ contains
     real(kind = wp) :: hx, hy, hz
     integer :: i, j, k
     real(kind = wp),parameter :: pi = 3.141592653589793_wp
-    real(kind = wp) :: r1, r2, f, ang
+    real(kind = wp) :: r1, r2, f, ang, tpv36_shift
     real(kind = wp) :: r0y, rny, r0z, rnz, q, r, s
 
     real(kind = wp) :: y, z, dz, dy, gg, delta, stretch
@@ -714,12 +714,19 @@ contains
                 end do
              end do
 
-          case('analytical_tpv36')
+          case('analytical_tpv36', 'analytical_tpv36_unshifted', &
+               'analytical_tpv36_ver_a', 'analytical_tpv36_ver_b', &
+               'analytical_tpv36_ver_c', 'analytical_tpv36_ver_d', &
+               'analytical_tpv36_a', 'analytical_tpv36_b', &
+               'analytical_tpv36_c', 'analytical_tpv36_d')
 
              hy = (by-ay)/real(my-1, wp)
              hz = (bz-az)/real(mz-1, wp)
 
              ang = 15.0_wp/180.0_wp*pi
+             tpv36_shift = 15.0_wp
+             if (trim(profile_type) /= 'analytical_tpv36') &
+                  tpv36_shift = 0.0_wp
 
              do k = 1,mz
                 do j = 1,my
@@ -737,13 +744,27 @@ contains
                    f = 0.0_wp
 
                    if (rc > 0.0_wp) then
-                      if (Yleft(j,k) .le. 8.0_wp) then
+                      if (trim(profile_type) == 'analytical_tpv36_ver_a' .or. &
+                          trim(profile_type) == 'analytical_tpv36_ver_b' .or. &
+                          trim(profile_type) == 'analytical_tpv36_ver_c' .or. &
+                          trim(profile_type) == 'analytical_tpv36_a' .or. &
+                          trim(profile_type) == 'analytical_tpv36_b' .or. &
+                          trim(profile_type) == 'analytical_tpv36_c') then
 
-                         f = 1.0_wp/tan(ang)*Yleft(j,k) - 15.0_wp! (1.0_wp-15.0_wp/90.0_wp)*0.5_wp*(bx-ax)
+                         f = tpv36_ver_interface(Yleft(j,k))
+
+                      else if (trim(profile_type) == 'analytical_tpv36_ver_d' .or. &
+                               trim(profile_type) == 'analytical_tpv36_d') then
+
+                         f = Yleft(j,k)/tan(ang)
+
+                      else if (Yleft(j,k) .le. 8.0_wp) then
+
+                         f = 1.0_wp/tan(ang)*Yleft(j,k) - tpv36_shift
                          
                       else
 
-                         f = 1.0_wp/tan(ang)*8.0_wp  - 15.0_wp + & !- (1.0_wp-15.0_wp/90.0_wp)*0.5_wp*(bx-ax) + &
+                         f = 1.0_wp/tan(ang)*8.0_wp - tpv36_shift + &
                               0.25_wp*atan(4.0_wp*(Yleft(j,k)-8.0_wp))*exp(-0.0_wp*(Yleft(j,k)-8.0_wp))
                               !1.0_wp*atan(1.0_wp*(Yleft(j,k)-8.5_wp))*exp(-2.0_wp*(Yleft(j,k)-8.5_wp))
 
@@ -752,13 +773,27 @@ contains
                    end if
 
                    if (lc > 0.0_wp) then
-                      if (Yright(j,k) .le. 8.0_wp) then
+                      if (trim(profile_type) == 'analytical_tpv36_ver_a' .or. &
+                          trim(profile_type) == 'analytical_tpv36_ver_b' .or. &
+                          trim(profile_type) == 'analytical_tpv36_ver_c' .or. &
+                          trim(profile_type) == 'analytical_tpv36_a' .or. &
+                          trim(profile_type) == 'analytical_tpv36_b' .or. &
+                          trim(profile_type) == 'analytical_tpv36_c') then
 
-                         f = 1.0_wp/tan(ang)*Yright(j,k) - 15.0_wp ! - (1.0_wp-15.0_wp/90.0_wp)*0.5_wp*(bx-ax)
+                         f = tpv36_ver_interface(Yright(j,k))
+
+                      else if (trim(profile_type) == 'analytical_tpv36_ver_d' .or. &
+                               trim(profile_type) == 'analytical_tpv36_d') then
+
+                         f = Yright(j,k)/tan(ang)
+
+                      else if (Yright(j,k) .le. 8.0_wp) then
+
+                         f = 1.0_wp/tan(ang)*Yright(j,k) - tpv36_shift
 
                       else
 
-                         f = 1.0_wp/tan(ang)*8.0_wp  - 15.0_wp + & !- (1.0_wp-15.0_wp/90.0_wp)*0.5_wp*(bx-ax) + &
+                         f = 1.0_wp/tan(ang)*8.0_wp - tpv36_shift + &
                                0.25_wp*atan(4.0_wp*(Yright(j,k)-8.0_wp))*exp(-0.0_wp*(Yright(j,k)-8.0_wp))
                               !1.0_wp*atan(1.0_wp*(Yright(j,k)-8.5_wp))*exp(-2.0_wp*(Yright(j,k)-8.5_wp))
 
@@ -1875,6 +1910,17 @@ contains
     call Gen3_Curve_Mesh(G,Yleft,Yright,Ytop,Ybottom,Yfront,Yback,2)
     call Gen3_Curve_Mesh(G,Zleft,Zright,Ztop,Zbottom,Zfront,Zback,3)
 
+    select case(trim(profile_type))
+    case('analytical_tpv36_a', 'analytical_tpv36_ver_a')
+       call TPV36_a(G, lc, rc, az, bz)
+    case('analytical_tpv36_b', 'analytical_tpv36_ver_b')
+       call TPV36_b(G, lc, rc, az, bz)
+    case('analytical_tpv36_c', 'analytical_tpv36_ver_c')
+       call TPV36_c(G, lc, rc, ax, bx, az, bz)
+    case('analytical_tpv36_d', 'analytical_tpv36_ver_d')
+       call TPV36_d(G, lc, rc, ax, bx)
+    end select
+
     ! Generate the x, y and z components of the grid
     !call Gen3_Curve_Mesh(G,Xleft,Xright,Xbottom,Xtop,Xfront,Xback,1)
     !call Gen3_Curve_Mesh(G,Yleft,Yright,Ybottom,Ytop,Yfront,Yback,2)
@@ -2288,6 +2334,242 @@ contains
     end do
 
   end subroutine Gen_Curve_Mesh
+
+  pure real(kind=wp) function tpv36_ver_interface(y) result(x)
+    ! C2 transition from the 15-degree planar fault to a locked vertical
+    ! extension over Y=8--11 km; the padding and PML below remain straight.
+    implicit none
+    real(kind=wp), intent(in) :: y
+    real(kind=wp), parameter :: pi = 3.141592653589793_wp
+    real(kind=wp) :: slope, t, integral_s
+
+    slope = 1.0_wp/tan(15.0_wp*pi/180.0_wp)
+    if (y <= 8.0_wp) then
+       x = y*slope
+    else if (y < 11.0_wp) then
+       t = (y-8.0_wp)/3.0_wp
+       integral_s = t**6 - 3.0_wp*t**5 + 2.5_wp*t**4
+       x = 8.0_wp*slope + 3.0_wp*slope*(t-integral_s)
+    else
+       x = 9.5_wp*slope
+    end if
+  end function tpv36_ver_interface
+
+  pure real(kind=wp) function tpv36_transition_fraction(u, length, n, ds) result(f)
+    ! Monotone C2 redistribution.  It matches ds-sized cells at both ends of
+    ! a transition while absorbing unavoidable excess nodes smoothly inside.
+    implicit none
+    real(kind=wp), intent(in) :: u, length, ds
+    integer, intent(in) :: n
+    real(kind=wp), parameter :: edge = 0.1_wp
+    real(kind=wp) :: endpoint_density, amp, base, tl, tr, hl, hr
+
+    endpoint_density = real(n,wp)*ds/length
+    amp = (endpoint_density-1.0_wp)/(1.0_wp-edge)
+    base = 1.0_wp-amp*edge
+    tl = min(max(u/edge,0.0_wp),1.0_wp)
+    hl = tl-2.5_wp*tl**4+3.0_wp*tl**5-tl**6
+    hr = 0.0_wp
+    if (u > 1.0_wp-edge) then
+       tr = min(max((1.0_wp-u)/edge,0.0_wp),1.0_wp)
+       hr = 0.5_wp-(tr-2.5_wp*tr**4+3.0_wp*tr**5-tr**6)
+    end if
+    f = base*u + amp*edge*(hl+hr)
+  end function tpv36_transition_fraction
+
+  subroutine TPV36_a(G, lc, rc, az, bz)
+    implicit none
+    type(block_grid_t), intent(inout) :: G
+    real(kind=wp), intent(in) :: lc, rc, az, bz
+    call apply_tpv36_zoned_x_map(G, lc, rc, az, bz, .true.)
+  end subroutine TPV36_a
+
+  subroutine TPV36_b(G, lc, rc, az, bz)
+    implicit none
+    type(block_grid_t), intent(inout) :: G
+    real(kind=wp), intent(in) :: lc, rc, az, bz
+    call apply_tpv36_zoned_x_map(G, lc, rc, az, bz, .false.)
+  end subroutine TPV36_b
+
+  subroutine TPV36_c(G, lc, rc, ax, bx, az, bz)
+    implicit none
+    type(block_grid_t), intent(inout) :: G
+    real(kind=wp), intent(in) :: lc, rc, ax, bx, az, bz
+    call apply_tpv36_parallel_x_map(G, lc, rc, ax, bx, az, bz)
+  end subroutine TPV36_c
+
+  subroutine TPV36_d(G, lc, rc, ax, bx)
+    implicit none
+    type(block_grid_t), intent(inout) :: G
+    real(kind=wp), intent(in) :: lc, rc, ax, bx
+    call apply_tpv36_planar_x_map(G, lc, rc, ax, bx)
+  end subroutine TPV36_d
+
+  subroutine apply_tpv36_zoned_x_map(G, lc, rc, az, bz, with_buffer)
+    ! X-only TPV36 map with straight 2 km padding and 3 km PML zones.
+    ! ver-a reserves a 2 km X-parallel buffer beside the fault; ver-b does not.
+    implicit none
+    type(block_grid_t), intent(inout) :: G
+    real(kind=wp), intent(in) :: lc, rc, az, bz
+    logical, intent(in) :: with_buffer
+    integer :: i, j, k, mx, px, my, py, mz, pz, ni
+    integer :: nbuf, npad, npml, ntransition, i1, i2, i3
+    integer :: nj, nactive_y, ntransition_y, j1, j2
+    real(kind=wp) :: ds, u, y, xf, dip
+
+    mx = G%C%mq; px = G%C%pq
+    my = G%C%mr; py = G%C%pr
+    mz = G%C%ms; pz = G%C%ps
+    ni = G%C%nq-1
+    ds = abs(bz-az)/real(G%C%ns-1,wp)
+    npml = max(1,nint(3.0_wp/ds))
+    npad = max(1,nint(2.0_wp/ds))
+    nbuf = 0
+    if (with_buffer) nbuf = max(1,nint(2.0_wp/ds))
+    ntransition = ni-npml-npad-nbuf
+    if (ntransition < 1) error stop 'TPV36 zoned X map has too few q intervals'
+
+    ! Redistribute Y so the target fault has <=ds arc-length spacing and the
+    ! final 2 km padding and 3 km PML have their stated physical thicknesses.
+    dip = 15.0_wp*3.141592653589793_wp/180.0_wp
+    nj = G%C%nr-1
+    nactive_y = ceiling(8.0_wp/(ds*sin(dip)))
+    ntransition_y = nj-nactive_y-npad-npml
+    if (ntransition_y < 1) error stop 'TPV36 zoned Y map has too few r intervals'
+    j1 = nactive_y
+    j2 = j1+ntransition_y
+
+    do k = mz,pz
+       do j = my,py
+          if (j-1 <= j1) then
+             y = 8.0_wp*real(j-1,wp)/real(nactive_y,wp)
+          else if (j-1 <= j2) then
+             y = 8.0_wp + 3.0_wp*real(j-1-j1,wp)/real(ntransition_y,wp)
+          else if (j-1 <= j2+npad) then
+             y = 11.0_wp + 2.0_wp*real(j-1-j2,wp)/real(npad,wp)
+          else
+             y = 13.0_wp + 3.0_wp*real(j-1-j2-npad,wp)/real(npml,wp)
+          end if
+          G%x(mx:px,j,k,2) = y
+          xf = tpv36_ver_interface(y)
+          do i = mx,px
+             if (rc > 0.0_wp) then
+                ! Block 1: outer boundary, PML, padding, transition, buffer, fault.
+                i1 = npml; i2 = i1+npad; i3 = i2+ntransition
+                if (i-1 <= i1) then
+                   u = real(i-1,wp)/real(i1,wp)
+                   G%x(i,j,k,1) = -20.0_wp + 3.0_wp*u
+                else if (i-1 <= i2) then
+                   u = real(i-1-i1,wp)/real(npad,wp)
+                   G%x(i,j,k,1) = -17.0_wp + 2.0_wp*u
+                else if (i-1 <= i3) then
+                   u = real(i-1-i2,wp)/real(ntransition,wp)
+                   G%x(i,j,k,1) = -15.0_wp + (xf-real(nbuf,wp)*ds+15.0_wp)* &
+                        tpv36_transition_fraction(u, &
+                        xf-real(nbuf,wp)*ds+15.0_wp,ntransition,ds)
+                else
+                   u = real(i-1-i3,wp)/real(max(1,nbuf),wp)
+                   G%x(i,j,k,1) = xf-real(nbuf,wp)*ds + real(nbuf,wp)*ds*u
+                end if
+             else if (lc > 0.0_wp) then
+                ! Block 2: fault, buffer, transition, padding, PML, outer boundary.
+                i1 = nbuf; i2 = i1+ntransition; i3 = i2+npad
+                if (nbuf > 0 .and. i-1 <= i1) then
+                   u = real(i-1,wp)/real(nbuf,wp)
+                   G%x(i,j,k,1) = xf + real(nbuf,wp)*ds*u
+                else if (i-1 <= i2) then
+                   u = real(i-1-i1,wp)/real(ntransition,wp)
+                   G%x(i,j,k,1) = xf+real(nbuf,wp)*ds + &
+                        (53.0_wp-xf-real(nbuf,wp)*ds)* &
+                        tpv36_transition_fraction(u, &
+                        53.0_wp-xf-real(nbuf,wp)*ds,ntransition,ds)
+                else if (i-1 <= i3) then
+                   u = real(i-1-i2,wp)/real(npad,wp)
+                   G%x(i,j,k,1) = 53.0_wp + 2.0_wp*u
+                else
+                   u = real(i-1-i3,wp)/real(npml,wp)
+                   G%x(i,j,k,1) = 55.0_wp + 3.0_wp*u
+                end if
+             end if
+          end do
+       end do
+    end do
+  end subroutine apply_tpv36_zoned_x_map
+
+  subroutine apply_tpv36_parallel_x_map(G, lc, rc, ax, bx, az, bz)
+    ! Entire block follows the fault at a constant X offset.  This gives
+    ! uniform transverse spacing, but deliberately warps the side PMLs and
+    ! makes the exterior X boundaries parallel to the locked extension.
+    implicit none
+    type(block_grid_t), intent(inout) :: G
+    real(kind=wp), intent(in) :: lc, rc, ax, bx, az, bz
+    integer :: i, j, k, mx, px, my, py, mz, pz
+    integer :: nj, npad, npml, nactive_y, ntransition_y, j1, j2
+    real(kind=wp) :: ds, dip, y, xf, q, offset
+
+    mx = G%C%mq; px = G%C%pq
+    my = G%C%mr; py = G%C%pr
+    mz = G%C%ms; pz = G%C%ps
+    ds = abs(bz-az)/real(G%C%ns-1,wp)
+    npml = max(1,nint(3.0_wp/ds))
+    npad = max(1,nint(2.0_wp/ds))
+    dip = 15.0_wp*3.141592653589793_wp/180.0_wp
+    nj = G%C%nr-1
+    nactive_y = ceiling(8.0_wp/(ds*sin(dip)))
+    ntransition_y = nj-nactive_y-npad-npml
+    if (ntransition_y < 1) error stop 'TPV36 parallel map has too few r intervals'
+    j1 = nactive_y
+    j2 = j1+ntransition_y
+
+    do k = mz,pz
+       do j = my,py
+          if (j-1 <= j1) then
+             y = 8.0_wp*real(j-1,wp)/real(nactive_y,wp)
+          else if (j-1 <= j2) then
+             y = 8.0_wp + 3.0_wp*real(j-1-j1,wp)/real(ntransition_y,wp)
+          else if (j-1 <= j2+npad) then
+             y = 11.0_wp + 2.0_wp*real(j-1-j2,wp)/real(npad,wp)
+          else
+             y = 13.0_wp + 3.0_wp*real(j-1-j2-npad,wp)/real(npml,wp)
+          end if
+          xf = tpv36_ver_interface(y)
+          do i = mx,px
+             q = real(i-1,wp)/real(G%C%nq-1,wp)
+             offset = ax+(bx-ax)*q
+             if (rc > 0.0_wp .or. lc > 0.0_wp) then
+                G%x(i,j,k,1) = xf+offset
+                G%x(i,j,k,2) = y
+             end if
+          end do
+       end do
+    end do
+  end subroutine apply_tpv36_parallel_x_map
+
+  subroutine apply_tpv36_planar_x_map(G, lc, rc, ax, bx)
+    ! Straight 15-degree continuation through the full Y extent.  All X-grid
+    ! lines, exterior boundaries, and side PMLs are constant fault offsets.
+    implicit none
+    type(block_grid_t), intent(inout) :: G
+    real(kind=wp), intent(in) :: lc, rc, ax, bx
+    integer :: i, j, k, mx, px, my, py, mz, pz
+    real(kind=wp) :: q, y, xf, offset, dip
+
+    mx = G%C%mq; px = G%C%pq
+    my = G%C%mr; py = G%C%pr
+    mz = G%C%ms; pz = G%C%ps
+    dip = 15.0_wp*3.141592653589793_wp/180.0_wp
+    do k = mz,pz
+       do j = my,py
+          y = G%x(mx,j,k,2)
+          xf = y/tan(dip)
+          do i = mx,px
+             q = real(i-1,wp)/real(G%C%nq-1,wp)
+             offset = ax+(bx-ax)*q
+             if (rc > 0.0_wp .or. lc > 0.0_wp) G%x(i,j,k,1) = xf+offset
+          end do
+       end do
+    end do
+  end subroutine apply_tpv36_planar_x_map
 
   subroutine Gen3_Curve_Mesh(G,Xleft,Xright,Xtop,Xbottom,Xfront,Xback,n)
 
