@@ -62,9 +62,9 @@ btp(2)%profile_path = 'No-path' /
 &fault_output_list
  fault_output_directory = 'fault_output',
  output_Uface = F,
- output_Vface = T,
+ output_Vface = F,
  output_S     = T,
- output_Uhat  = T,
+ output_Uhat  = F,
  output_Vhat  = T,
  output_Svel  = T,
  output_trup  = T,
