@@ -265,6 +265,20 @@ module datatypes
                                            Uhat_pluspres , &
                                            Vhat_pluspres
    end type fault_type
+
+   type :: fault_receiver_output_type
+      logical :: enabled = .false.
+      integer :: nreceivers = 0
+      integer :: stride = 1
+      integer :: step_counter = 0
+      integer :: comm = -1
+      integer :: comm_rank = -1
+      character(len=256) :: directory = 'fault_receivers'
+      character(len=64), allocatable :: name(:)
+      real(kind=wp), allocatable :: target_xyz(:,:), actual_xyz(:,:)
+      real(kind=wp), allocatable :: distance(:)
+      integer, allocatable :: owner(:), j(:), k(:), file_unit(:)
+   end type fault_receiver_output_type
  
    !> mms datatype
    type :: mms_type
@@ -344,6 +358,7 @@ module datatypes
       type(block_type),allocatable :: B(:) !< blocks
       type(iface_type),allocatable :: I(:) !< interfaces
       type(fault_type) :: fault
+      type(fault_receiver_output_type) :: fault_receivers
       type(mms_type) :: mms_vars
       character(256) :: name, problem,response,plastic_model
       character(64) :: coupling, fd_type

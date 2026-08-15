@@ -70,7 +70,8 @@ contains
     !> @brief advance solution in domain by one time step dt using low storage Runge-Kutta method
 
     use domain, only : domain_type,write_output,enforce_bound_iface_conditions, &
-         exchange_fields, scale_rates, set_rates, update_fields, exchange_fields_interface
+         exchange_fields, scale_rates, set_rates, update_fields, exchange_fields_interface, &
+         write_fault_receivers_domain
     !use plastic, only : update_fields_plastic
     !use moment_tensor, only : exact_moment_tensor
 
@@ -134,6 +135,7 @@ contains
        ! by one time step, but this would not provide "rates" (like slip velocity
        ! fault tractions) at time t0, which are set above during first stage of RK method
 
+       if (stage==1) call write_fault_receivers_domain(D)
        if ((stage==1) .and. (mod(n-1,D%w_stride)==0)) call write_output(D)
 
        ! update fields

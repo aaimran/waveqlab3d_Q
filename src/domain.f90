@@ -19,6 +19,8 @@ module domain
   use slice_output, only : init_slice_output, end_slice_output
   use seismogram
   use plane_output, only : init_plane_output, write_plane_output, end_plane_output
+  use fault_receiver_output, only : init_fault_receiver_output, &
+       write_fault_receiver_output, end_fault_receiver_output
 
   implicit none
 
@@ -302,6 +304,8 @@ contains
 
       if (in_fault_comm(1)) call init_fault_output(infile, D%w_fault,D%name, D%fault, D%B(1)%G%C, fault_comms(1))
       if (in_fault_comm(2) .and. .not.in_fault_comm(1)) call init_fault_output(infile, D%w_fault,D%name, D%fault, D%B(2)%G%C, fault_comms(2))
+      if (in_fault_comm(1)) call init_fault_receiver_output(infile, D%name, &
+           D%fault_receivers, D%I(1), D%fault, D%B(1)%G, fault_comms(1))
     else
       ! 1-block mode: no interface communicators
       in_fault_comm(1) = .false.
@@ -516,6 +520,7 @@ contains
        if (in_fault_comm(1)) call destroy_fault(D%fault)
        if (in_fault_comm(2) .and. .not.in_fault_comm(1)) call destroy_fault(D%fault)
     end if
+    if (in_fault_comm(1)) call end_fault_receiver_output(D%fault_receivers)
     !call end_slice_output(D%slicer)
     if (in_block_comm(1)) call destroy_seismogram(D%seismometers(1))
     if (in_block_comm(2)) call destroy_seismogram(D%seismometers(2))
@@ -698,6 +703,14 @@ contains
     call write_seismogram_output(D)
 
   end subroutine write_output
+
+  subroutine write_fault_receivers_domain(D)
+    implicit none
+    type(domain_type), intent(inout) :: D
+    if (D%nifaces < 1) return
+    if (in_fault_comm(1)) call write_fault_receiver_output( &
+         D%fault_receivers, D%t, D%I(1), D%fault)
+  end subroutine write_fault_receivers_domain
 
   subroutine write_fault_output(D)
 

@@ -45,6 +45,7 @@ endif(APPLE)
 # Setup the source files and the executable name for the project.
 set(WQL3D_SRC
   fault_output.f90
+  fault_receiver_output.f90
   iface.f90
   block.f90
   boundary.f90
@@ -84,7 +85,6 @@ set(WQL3D_SRC
   Interface_Condition.f90
   initial_stress_condition.f90
   inter_material.f90
-  fault_output.f90
   unit_normals.f90
   seismogram.f90
   slice_output.f90
