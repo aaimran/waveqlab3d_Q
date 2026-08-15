@@ -38,8 +38,9 @@ mapped coordinate, and mapping distance in km. A large mapping distance means
 the receiver or mesh should be checked. This first implementation deliberately
 uses nearest-node sampling; it does not interpolate.
 
-One text file is written per receiver in `fault_receiver_directory`. Its eight
-columns are:
+One benchmark-compatible text file is written per receiver in
+`fault_receiver_directory`. Its un-commented field-list line and eight columns
+are:
 
 ```text
 t  h-slip  h-slip-rate  h-shear-stress  v-slip  v-slip-rate  v-shear-stress  n-stress

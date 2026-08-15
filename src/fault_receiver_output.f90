@@ -136,7 +136,7 @@ contains
           write(unit,'(a,3(es24.16,1x))') '# mapped_xyz_km=', R%actual_xyz(:,n)
           write(unit,'(a,es24.16)') '# mapping_distance_km=', R%distance(n)
           write(unit,'(a)') '# units: s m m/s MPa m m/s MPa MPa'
-          write(unit,'(a)') '# t h-slip h-slip-rate h-shear-stress v-slip v-slip-rate v-shear-stress n-stress'
+          write(unit,'(a)') 't h-slip h-slip-rate h-shear-stress v-slip v-slip-rate v-shear-stress n-stress'
        end if
     end do
   end subroutine init_fault_receiver_output
