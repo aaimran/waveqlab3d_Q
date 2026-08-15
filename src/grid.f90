@@ -718,7 +718,8 @@ contains
                'analytical_tpv36_ver_a', 'analytical_tpv36_ver_b', &
                'analytical_tpv36_ver_c', 'analytical_tpv36_ver_d', &
                'analytical_tpv36_a', 'analytical_tpv36_b', &
-               'analytical_tpv36_c', 'analytical_tpv36_d')
+               'analytical_tpv36_c', 'analytical_tpv36_d', &
+               'analytical_tpv36_e')
 
              hy = (by-ay)/real(my-1, wp)
              hz = (bz-az)/real(mz-1, wp)
@@ -749,7 +750,8 @@ contains
                           trim(profile_type) == 'analytical_tpv36_ver_c' .or. &
                           trim(profile_type) == 'analytical_tpv36_a' .or. &
                           trim(profile_type) == 'analytical_tpv36_b' .or. &
-                          trim(profile_type) == 'analytical_tpv36_c') then
+                          trim(profile_type) == 'analytical_tpv36_c' .or. &
+                          trim(profile_type) == 'analytical_tpv36_e') then
 
                          f = tpv36_ver_interface(Yleft(j,k))
 
@@ -778,7 +780,8 @@ contains
                           trim(profile_type) == 'analytical_tpv36_ver_c' .or. &
                           trim(profile_type) == 'analytical_tpv36_a' .or. &
                           trim(profile_type) == 'analytical_tpv36_b' .or. &
-                          trim(profile_type) == 'analytical_tpv36_c') then
+                          trim(profile_type) == 'analytical_tpv36_c' .or. &
+                          trim(profile_type) == 'analytical_tpv36_e') then
 
                          f = tpv36_ver_interface(Yright(j,k))
 
@@ -1919,6 +1922,8 @@ contains
        call TPV36_c(G, lc, rc, ax, bx, az, bz)
     case('analytical_tpv36_d', 'analytical_tpv36_ver_d')
        call TPV36_d(G, lc, rc, ax, bx)
+    case('analytical_tpv36_e', 'analytical_tpv36_ver_e')
+       call TPV36_e(G, lc, rc, az, bz)
     end select
 
     ! Generate the x, y and z components of the grid
@@ -2404,6 +2409,70 @@ contains
     real(kind=wp), intent(in) :: lc, rc, ax, bx
     call apply_tpv36_planar_x_map(G, lc, rc, ax, bx)
   end subroutine TPV36_d
+
+  subroutine TPV36_e(G, lc, rc, az, bz)
+    ! Hybrid fault-normal grid.  Begin with the ver-a zoned mesh, rotate the
+    ! transverse direction to the fault normal at the 18 km hypocenter, and
+    ! relax it exponentially toward the outer parts of each block.  Rotation
+    ! fades independently toward the free surface and lower boundary.
+    implicit none
+    type(block_grid_t), intent(inout) :: G
+    real(kind=wp), intent(in) :: lc, rc, az, bz
+    call apply_tpv36_zoned_x_map(G, lc, rc, az, bz, .true.)
+    call apply_tpv36_fault_normal_buffer(G)
+  end subroutine TPV36_e
+
+  pure real(kind=wp) function tpv36_smootherstep(t) result(s)
+    implicit none
+    real(kind=wp), intent(in) :: t
+    real(kind=wp) :: u
+    u = min(max(t,0.0_wp),1.0_wp)
+    s = u**3*(10.0_wp-15.0_wp*u+6.0_wp*u**2)
+  end function tpv36_smootherstep
+
+  subroutine apply_tpv36_fault_normal_buffer(G)
+    implicit none
+    type(block_grid_t), intent(inout) :: G
+    integer :: i, j, k, mx, px, my, py, mz, pz
+    real(kind=wp), parameter :: relax_length = 2.0_wp
+    real(kind=wp) :: dip, yh, ybottom, y0, xf, d, ad, depth_w, radial_w
+    real(kind=wp) :: beta, x0
+
+    mx = G%C%mq; px = G%C%pq
+    my = G%C%mr; py = G%C%pr
+    mz = G%C%ms; pz = G%C%ps
+    dip = 15.0_wp*3.141592653589793_wp/180.0_wp
+    yh = 18.0_wp*sin(dip)
+    ybottom = 16.0_wp
+
+    do k = mz,pz
+       do j = my,py
+          y0 = G%x(mx,j,k,2)
+          if (y0 <= yh) then
+             depth_w = tpv36_smootherstep(y0/yh)
+          else
+             depth_w = 1.0_wp-tpv36_smootherstep((y0-yh)/(ybottom-yh))
+          end if
+          xf = tpv36_ver_interface(y0)
+          do i = mx,px
+             x0 = G%x(i,j,k,1)
+             d = x0-xf
+             ad = abs(d)
+             ! Unit normal with positive X component is
+             ! (sin(dip),-cos(dip)).  d*radial_w approaches a bounded 2 km
+             ! displacement, avoiding the foldover caused by a compact taper.
+             if (ad > tiny(1.0_wp)) then
+                radial_w = relax_length/ad*(1.0_wp-exp(-ad/relax_length))
+             else
+                radial_w = 1.0_wp
+             end if
+             beta = depth_w*radial_w
+             G%x(i,j,k,1) = xf+d*(1.0_wp-beta*(1.0_wp-sin(dip)))
+             G%x(i,j,k,2) = y0-d*beta*cos(dip)
+          end do
+       end do
+    end do
+  end subroutine apply_tpv36_fault_normal_buffer
 
   subroutine apply_tpv36_zoned_x_map(G, lc, rc, az, bz, with_buffer)
     ! X-only TPV36 map with straight 2 km padding and 3 km PML zones.

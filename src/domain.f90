@@ -300,8 +300,8 @@ contains
       call new_communicator(in_fault_comm(1), fault_comms(1))
       call new_communicator(in_fault_comm(2), fault_comms(2))
 
-      if (in_fault_comm(1)) call init_fault_output(D%w_fault,D%name, D%fault, D%B(1)%G%C, fault_comms(1))
-      if (in_fault_comm(2) .and. .not.in_fault_comm(1)) call init_fault_output(D%w_fault,D%name, D%fault, D%B(2)%G%C, fault_comms(2))
+      if (in_fault_comm(1)) call init_fault_output(infile, D%w_fault,D%name, D%fault, D%B(1)%G%C, fault_comms(1))
+      if (in_fault_comm(2) .and. .not.in_fault_comm(1)) call init_fault_output(infile, D%w_fault,D%name, D%fault, D%B(2)%G%C, fault_comms(2))
     else
       ! 1-block mode: no interface communicators
       in_fault_comm(1) = .false.
@@ -732,7 +732,8 @@ contains
           pr2 = D%B(2)%G%C%pr
           ps2 = D%B(2)%G%C%ps
           
-          call write_file_distributed(D%fault%handles(2), D%B(2)%F%F(mq2,mr2:pr2,ms2:ps2,:))
+          if (D%fault%output_enabled(2)) call write_file_distributed( &
+               D%fault%handles(2), D%B(2)%F%F(mq2,mr2:pr2,ms2:ps2,:))
        end if
     end if
 

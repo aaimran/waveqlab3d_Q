@@ -10,12 +10,13 @@ module fault_output
 
 contains
 
-  subroutine init_fault_output(w_fault, name, T, C, comm)
+  subroutine init_fault_output(input, w_fault, name, T, C, comm)
 
     use mpi3dcomm, only : cartesian3d_t, allocate_array_boundary
 
     implicit none
 
+    integer, intent(in) :: input
     character(*), intent(in) :: name
 
     type(fault_type), intent(inout) :: T
@@ -23,11 +24,31 @@ contains
     integer, intent(in) :: comm
     logical, intent(in) :: w_fault
     character(len=256),dimension(8) :: filename
+    character(len=256) :: fault_output_directory
+    logical :: output_Uface, output_Vface, output_S, output_Uhat
+    logical :: output_Vhat, output_Svel, output_trup, output_state
     character(len=16) :: extension1,extension2,extension8
     character(len=12) :: extension3
     character(len=15) :: extension4,extension5,extension6,extension7
     character (len = 1) :: direction
-    integer :: i
+    integer :: i, stat, comm_rank, ierr
+    namelist /fault_output_list/ fault_output_directory, output_Uface, &
+         output_Vface, output_S, output_Uhat, output_Vhat, output_Svel, &
+         output_trup, output_state
+
+    ! Missing &fault_output_list preserves the legacy behavior: all eight
+    ! files are written in the run directory whenever w_fault is true.
+    fault_output_directory = '.'
+    output_Uface = .true.; output_Vface = .true.; output_S = .true.
+    output_Uhat = .true.; output_Vhat = .true.; output_Svel = .true.
+    output_trup = .true.; output_state = .true.
+    rewind(input)
+    read(input, nml=fault_output_list, iostat=stat)
+    if (stat > 0) call error('invalid &fault_output_list', 'init_fault_output')
+    T%output_enabled = (/ output_Uface, output_Vface, output_S, output_Uhat, &
+                          output_Vhat, output_Svel, output_trup, output_state /)
+    T%output_directory = trim(adjustl(fault_output_directory))
+    if (len_trim(T%output_directory) == 0) T%output_directory = '.'
     extension1 = '_interface.Uface'
     extension2 = '_interface.Vface'
     extension3 = '_interface.S'
@@ -45,14 +66,24 @@ contains
     filename(7) = trim(adjustl(trim(name) // extension7))
     filename(8) = trim(adjustl(trim(name) // extension8))
 
+    if (trim(T%output_directory) /= '.') then
+       call MPI_Comm_rank(comm, comm_rank, ierr)
+       if (comm_rank == 0) call execute_command_line( &
+            'mkdir -p "' // trim(T%output_directory) // '"')
+       call MPI_Barrier(comm, ierr)
+       do i = 1,8
+          filename(i) = trim(T%output_directory) // '/' // trim(filename(i))
+       end do
+    end if
+
 
     call subarray(C%nr,C%ns,C%mr,C%pr,C%ms,C%ps, MPI_REAL_PS, T%array_s)
 
     if(w_fault .eqv. .true.) then
        ! open files
        do i = 1,8
-          call open_file_distributed(T%handles(i), filename(i), &
-               'write', comm, T%array_s, ps)
+          if (T%output_enabled(i)) call open_file_distributed( &
+               T%handles(i), filename(i), 'write', comm, T%array_s, ps)
        end do
 
     end if
@@ -85,13 +116,13 @@ contains
 
     ! write data to file Uface
     usize = size(U,1)
-    call write_file_distributed(fault%handles(1), U)
+    if (fault%output_enabled(1)) call write_file_distributed(fault%handles(1), U)
 
     ! write data to file S
-    call write_file_distributed(fault%handles(3), S)
+    if (fault%output_enabled(3)) call write_file_distributed(fault%handles(3), S)
 
     ! write data to file W
-    call write_file_distributed(fault%handles(8), W)
+    if (fault%output_enabled(8)) call write_file_distributed(fault%handles(8), W)
 
   end subroutine write_fault
 
@@ -108,16 +139,16 @@ contains
     type(fault_type), intent(in) :: fault
 
     ! write data to file Uhat
-    call write_file_distributed(fault%handles(4), Uhat)
+    if (fault%output_enabled(4)) call write_file_distributed(fault%handles(4), Uhat)
 
     ! write data to file 2
-    call write_file_distributed(fault%handles(5), Vhat)
+    if (fault%output_enabled(5)) call write_file_distributed(fault%handles(5), Vhat)
 
     ! write data to file S vel
-    call write_file_distributed(fault%handles(6), Svel)
+    if (fault%output_enabled(6)) call write_file_distributed(fault%handles(6), Svel)
 
     ! write data to file trup
-    call write_file_distributed(fault%handles(7), trup)
+    if (fault%output_enabled(7)) call write_file_distributed(fault%handles(7), trup)
 
   end subroutine write_hats
 
@@ -129,7 +160,7 @@ contains
     type(fault_type), intent(inout) :: fault
 
     do i = 1,8
-       call close_file_distributed(fault%handles(i))
+       if (fault%output_enabled(i)) call close_file_distributed(fault%handles(i))
     end do
 
   end subroutine destroy_fault

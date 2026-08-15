@@ -253,6 +253,8 @@ module datatypes
    !> fault datatype for outputting the different values at the interface
    type fault_type
       type(file_distributed), dimension(8) :: handles
+      logical, dimension(8) :: output_enabled = .true.
+      character(len=256) :: output_directory = '.'
       integer :: array_s
       real(kind = wp),  allocatable, dimension(:, :, :) :: time_rup
       real(kind = wp),  allocatable, dimension(:, :, :) :: W
