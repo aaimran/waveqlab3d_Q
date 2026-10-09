@@ -88,6 +88,11 @@ contains
          F%M%Deta6cQ=A*F%M%Deta6cQ; F%M%Deta7cQ=A*F%M%Deta7cQ
          F%M%Deta8cQ=A*F%M%Deta8cQ; F%M%Deta9cQ=A*F%M%Deta9cQ
       end if
+      if (F%M%anelastic_fQ) then
+         F%M%Deta4fQ=A*F%M%Deta4fQ; F%M%Deta5fQ=A*F%M%Deta5fQ
+         F%M%Deta6fQ=A*F%M%Deta6fQ; F%M%Deta7fQ=A*F%M%Deta7fQ
+         F%M%Deta8fQ=A*F%M%Deta8fQ; F%M%Deta9fQ=A*F%M%Deta9fQ
+      end if
       if (allocated(F%M%eta4Qf8)) then
          F%M%Deta4Qf8 = A*F%M%Deta4Qf8
          F%M%Deta5Qf8 = A*F%M%Deta5Qf8
@@ -202,6 +207,14 @@ contains
          F%M%eta7cQ=F%M%eta7cQ+dt*F%M%Deta7cQ
          F%M%eta8cQ=F%M%eta8cQ+dt*F%M%Deta8cQ
          F%M%eta9cQ=F%M%eta9cQ+dt*F%M%Deta9cQ
+      end if
+      if (F%M%anelastic_fQ) then
+         F%M%eta4fQ=F%M%eta4fQ+dt*F%M%Deta4fQ
+         F%M%eta5fQ=F%M%eta5fQ+dt*F%M%Deta5fQ
+         F%M%eta6fQ=F%M%eta6fQ+dt*F%M%Deta6fQ
+         F%M%eta7fQ=F%M%eta7fQ+dt*F%M%Deta7fQ
+         F%M%eta8fQ=F%M%eta8fQ+dt*F%M%Deta8fQ
+         F%M%eta9fQ=F%M%eta9fQ+dt*F%M%Deta9fQ
       end if
       if (allocated(F%M%eta4Qf8)) then
          F%M%eta4Qf8 = F%M%eta4Qf8 + dt*F%M%Deta4Qf8

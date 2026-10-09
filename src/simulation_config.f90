@@ -6,6 +6,7 @@ module simulation_config
   use anelastic_q8_model, only : q8_parameters
   use anelastic_cq8_b2_model, only : cq8_b2_parameters
   use anelastic_cq_model, only : cq_parameters
+  use anelastic_fq_model, only : fq_parameters
   use anelastic_fq8_model, only : fq8_parameters
   implicit none
   private
@@ -40,11 +41,13 @@ module simulation_config
      type(q8_parameters) :: q8
      type(cq8_b2_parameters) :: cq8_b2
      type(cq_parameters) :: cq
+     type(fq_parameters) :: fq
      type(fq8_parameters) :: fq8
      logical :: has_q4 = .false.
      logical :: has_q8 = .false.
      logical :: has_cq8_b2 = .false.
      logical :: has_cq = .false.
+     logical :: has_fq = .false.
      logical :: has_fq8 = .false.
      integer :: process_dims(2,3) = 1
      integer :: block_sizes(2) = 0

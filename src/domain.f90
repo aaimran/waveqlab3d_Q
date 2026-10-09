@@ -46,6 +46,7 @@ contains
     use anelastic_q8_model, only : q8_parameters
     use anelastic_cq8_b2_model, only : cq8_b2_relaxation_dt_limit
     use anelastic_cq_model, only : cq_relaxation_dt_limit
+    use anelastic_fq_model, only : fq_relaxation_dt_limit
     use anelastic_fq8_model, only : fq8_relaxation_dt_limit
 
     implicit none
@@ -176,6 +177,9 @@ contains
      else if (trim(response_norm) == 'anelastic-cQ') then
        relaxation_dt_limit = cq_relaxation_dt_limit(config%cq)
        dtmin = min(dtmin, relaxation_dt_limit)
+     else if (trim(response_norm) == 'anelastic-fQ') then
+       relaxation_dt_limit = fq_relaxation_dt_limit(config%fq)
+       dtmin = min(dtmin, relaxation_dt_limit)
      else if (trim(response_norm) == 'anelastic-fQ8') then
        relaxation_dt_limit = fq8_relaxation_dt_limit(config%fq8)
        dtmin = min(dtmin, relaxation_dt_limit)
@@ -231,7 +235,7 @@ contains
       if (trim(response_norm) == 'anelastic-cQ8-b2') selected_q8 = config%cq8_b2%block(i)
       call init_block(D%mesh_source, D%type_of_mesh, D%material_source,&
            D%response, D%fd_type,  D%order, D%interpol, D%use_topography, topo, D%B(i), &
-         problem, btp(i), block_comms(i),infile,i, ny, nz, config%q4, selected_q8, config%cq, config%fq8, &
+         problem, btp(i), block_comms(i),infile,i, ny, nz, config%q4, selected_q8, config%cq, config%fq, config%fq8, &
          config%process_dims(i,:), D%debug)
 
       cart_size = [D%B(i)%G%C%size_q,D%B(i)%G%C%size_r,D%B(i)%G%C%size_s]
@@ -257,6 +261,8 @@ contains
         write (*,*) "        cQ8-b2 relaxation limit = ", relaxation_dt_limit
       if (trim(response_norm) == 'anelastic-cQ') &
         write (*,*) "        cQ relaxation limit = ", relaxation_dt_limit
+      if (trim(response_norm) == 'anelastic-fQ') &
+        write (*,*) "        fQ relaxation limit = ", relaxation_dt_limit
       write (*,*) "        Final time = ", D%t_final
     end if
 
@@ -433,6 +439,7 @@ contains
     use material, only : destroy_anelastic_Q4_properties, destroy_anelastic_Q8_properties, &
          destroy_anelastic_Qf8_properties
     use anelastic_cq_material, only : destroy_anelastic_cq_properties
+    use anelastic_fq_material, only : destroy_anelastic_fq_properties
     use diagnostics, only : fatal_local
     use mpi3dbasic, only : rank
     use, intrinsic :: ieee_arithmetic, only : ieee_is_finite
@@ -444,7 +451,7 @@ contains
 
     if (trim(D%response) == 'anelastic-Q4' .or. trim(D%response) == 'anelastic-Q8' .or. &
         trim(D%response) == 'anelastic-cQ8-b2' .or. &
-        trim(D%response) == 'anelastic-cQ' .or. &
+        trim(D%response) == 'anelastic-cQ' .or. trim(D%response) == 'anelastic-fQ' .or. &
         trim(D%response) == 'anelastic-fQ8') then
        local_eta = 0.0_wp
        local_field = 0.0_wp
@@ -469,6 +476,18 @@ contains
                   maxval(abs(D%B(i)%M%eta5cQ)),maxval(abs(D%B(i)%M%eta6cQ)), &
                   maxval(abs(D%B(i)%M%eta7cQ)),maxval(abs(D%B(i)%M%eta8cQ)), &
                   maxval(abs(D%B(i)%M%eta9cQ)))
+          else if (trim(D%response) == 'anelastic-fQ' .and. allocated(D%B(i)%M%eta4fQ)) then
+             local_finite=local_finite .and. all(ieee_is_finite(D%B(i)%F%F)) .and. &
+                  all(ieee_is_finite(D%B(i)%M%eta4fQ)) .and. all(ieee_is_finite(D%B(i)%M%eta5fQ)) .and. &
+                  all(ieee_is_finite(D%B(i)%M%eta6fQ)) .and. all(ieee_is_finite(D%B(i)%M%eta7fQ)) .and. &
+                  all(ieee_is_finite(D%B(i)%M%eta8fQ)) .and. all(ieee_is_finite(D%B(i)%M%eta9fQ)) .and. &
+                  all(ieee_is_finite(D%B(i)%M%Deta4fQ)) .and. all(ieee_is_finite(D%B(i)%M%Deta5fQ)) .and. &
+                  all(ieee_is_finite(D%B(i)%M%Deta6fQ)) .and. all(ieee_is_finite(D%B(i)%M%Deta7fQ)) .and. &
+                  all(ieee_is_finite(D%B(i)%M%Deta8fQ)) .and. all(ieee_is_finite(D%B(i)%M%Deta9fQ))
+             local_eta=max(local_eta,maxval(abs(D%B(i)%M%eta4fQ)), &
+                  maxval(abs(D%B(i)%M%eta5fQ)),maxval(abs(D%B(i)%M%eta6fQ)), &
+                  maxval(abs(D%B(i)%M%eta7fQ)),maxval(abs(D%B(i)%M%eta8fQ)), &
+                  maxval(abs(D%B(i)%M%eta9fQ)))
           else if (allocated(D%B(i)%M%eta4Qf8)) then
              local_eta = max(local_eta,maxval(abs(D%B(i)%M%eta4Qf8)), &
                   maxval(abs(D%B(i)%M%eta5Qf8)),maxval(abs(D%B(i)%M%eta6Qf8)), &
@@ -496,6 +515,9 @@ contains
        if (.not.global_finite .and. trim(D%response) == 'anelastic-cQ') &
             call fatal_local('RUN-CQ-001', &
             'Non-finite cQ field or memory state detected at shutdown.','close_domain')
+       if (.not.global_finite .and. trim(D%response) == 'anelastic-fQ') &
+            call fatal_local('RUN-FQ-001', &
+            'Non-finite fQ field or memory state detected at shutdown.','close_domain')
        if (.not.global_finite .and. trim(D%response) == 'anelastic-fQ8') &
             call fatal_local('RUN-FQ8-001', &
             'Non-finite fQ8 field or memory state detected at shutdown.', 'close_domain')
@@ -511,6 +533,9 @@ contains
        if (rank == 0 .and. trim(D%response) == 'anelastic-cQ') &
             write(*,'(A,ES12.4,A,ES12.4)') &
             'cQ final state: max|field|=',global_field,', max|memory|=',global_eta
+       if (rank == 0 .and. trim(D%response) == 'anelastic-fQ') &
+            write(*,'(A,ES12.4,A,ES12.4)') &
+            'fQ final state: max|field|=',global_field,', max|memory|=',global_eta
        if (rank == 0 .and. trim(D%response) == 'anelastic-fQ8') &
             write(*,'(A,ES12.4,A,ES12.4)') &
             'fQ8 final state: max|field|=', global_field, ', max|memory|=', global_eta
@@ -532,6 +557,7 @@ contains
        if (D%B(i)%M%anelastic_Q) call destroy_anelastic_Q4_properties(D%B(i)%M)
        if (D%B(i)%M%anelastic_Q8) call destroy_anelastic_Q8_properties(D%B(i)%M)
        if (D%B(i)%M%anelastic_cQ) call destroy_anelastic_cq_properties(D%B(i)%M)
+       if (D%B(i)%M%anelastic_fQ) call destroy_anelastic_fq_properties(D%B(i)%M)
        if (D%B(i)%M%anelastic_Qf8) call destroy_anelastic_Qf8_properties(D%B(i)%M)
     end do
 

@@ -10,6 +10,7 @@ module input_preflight
   use anelastic_q8_model, only : read_q8_parameters
   use anelastic_cq8_b2_model, only : read_cq8_b2_parameters
   use anelastic_cq_model, only : read_cq_parameters
+  use anelastic_fq_model, only : read_fq_parameters
   use anelastic_fq8_model, only : read_fq8_parameters
   use decomposition_safety, only : stencil_requirements_t, get_stencil_requirements, &
        topology_fits, select_single_block_topology
@@ -180,6 +181,27 @@ contains
                         ', Qp0=',config%cq%Qp0(1)
                    write(*,'(A,ES12.4,A,ES12.4)') '  block 2: Qs0=',config%cq%Qs0(2), &
                         ', Qp0=',config%cq%Qp0(2)
+                end if
+             end if
+          end if
+          if (.not.issues%has_errors() .and. trim(adjustl(response)) == 'anelastic-fQ') then
+             if (nblocks /= 2) then
+                call issues%add(DIAG_ERROR,'CFG-FQ-002', &
+                     'Response anelastic-fQ requires exactly two blocks.', &
+                     section='problem_list',field='nblocks',suggestion='Set nblocks=2.')
+             else
+                call read_fq_parameters(infile,config%fq,stat,iomsg)
+                if (stat /= 0) then
+                   call issues%add(DIAG_ERROR,'CFG-FQ-001',trim(iomsg), &
+                        section='anelastic_fQ_list', &
+                        suggestion='Provide valid Q pairs, frequencies, policy, and n_mechanisms=4..8.')
+                else
+                   config%has_fq=.true.
+                   write(*,'(A,I0)') 'anelastic-fQ mechanisms: ',config%fq%n_mechanisms
+                   write(*,'(A,ES12.4,A,ES12.4)') '  block 1: Qs0=',config%fq%Qs0(1), &
+                        ', Qp0=',config%fq%Qp0(1)
+                   write(*,'(A,ES12.4,A,ES12.4)') '  block 2: Qs0=',config%fq%Qs0(2), &
+                        ', Qp0=',config%fq%Qp0(2)
                 end if
              end if
           end if
@@ -402,6 +424,7 @@ contains
     use anelastic_fq8_model, only : fq8_relaxation_dt_limit
     use anelastic_cq8_b2_model, only : cq8_b2_relaxation_dt_limit
     use anelastic_cq_model, only : cq_relaxation_dt_limit
+    use anelastic_fq_model, only : fq_relaxation_dt_limit
 
     type(simulation_config_t), intent(in) :: config
     integer :: i, nt, limiting_block
@@ -435,6 +458,8 @@ contains
        relaxation_limit = cq8_b2_relaxation_dt_limit(config%cq8_b2)
     case ('anelastic-cQ')
        relaxation_limit = cq_relaxation_dt_limit(config%cq)
+    case ('anelastic-fQ')
+       relaxation_limit = fq_relaxation_dt_limit(config%fq)
     case ('anelastic-fQ8')
        relaxation_limit = fq8_relaxation_dt_limit(config%fq8)
     end select
@@ -486,7 +511,7 @@ contains
 
     select case (trim(adjustl(response)))
     case ('elastic','plastic','anelastic','low-pass','anelastic-Q','anelastic-Q4','anelastic-Q8', &
-          'anelastic-cQ8-b2','anelastic-cQ', &
+          'anelastic-cQ8-b2','anelastic-cQ','anelastic-fQ', &
           'anelastic-Qf','anelastic-fQ8','constant-Q-4M','constant-Q-8M','frequency-Q-4M','frequency-Q-8M')
     case default
        call issues%add(DIAG_ERROR, 'CFG-PROBLEM-002', &
@@ -757,6 +782,8 @@ contains
     if (config%has_cq8_b2) call broadcast_cq8_b2(config)
     call MPI_Bcast(config%has_cq, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, ierr)
     if (config%has_cq) call broadcast_cq(config)
+    call MPI_Bcast(config%has_fq, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, ierr)
+    if (config%has_fq) call broadcast_fq(config)
     call MPI_Bcast(config%has_fq8, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, ierr)
     if (config%has_fq8) call broadcast_fq8(config)
   end subroutine broadcast_config
@@ -838,6 +865,26 @@ contains
     call MPI_Bcast(config%cq%nnls_tolerance,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
     call MPI_Bcast(config%cq%max_fit_error,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
   end subroutine broadcast_cq
+
+  subroutine broadcast_fq(config)
+    type(simulation_config_t), intent(inout) :: config
+    integer :: ierr
+    call MPI_Bcast(config%fq%Qs0,2,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+    call MPI_Bcast(config%fq%Qp0,2,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+    call MPI_Bcast(config%fq%fref,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+    call MPI_Bcast(config%fq%fmin,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+    call MPI_Bcast(config%fq%fmax,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+    call MPI_Bcast(config%fq%n_mechanisms,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+    call MPI_Bcast(config%fq%nnls_samples,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+    call bcast_chars(config%fq%coefficient_policy)
+    call bcast_chars(config%fq%nnls_objective)
+    call MPI_Bcast(config%fq%nnls_tolerance,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+    call MPI_Bcast(config%fq%max_fit_error,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+    call bcast_chars(config%fq%relaxation_policy)
+    call MPI_Bcast(config%fq%gamma,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+    call MPI_Bcast(config%fq%f_transition,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+    call MPI_Bcast(config%fq%nnls_max_iterations,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+  end subroutine broadcast_fq
 
   subroutine broadcast_fq8(config)
     type(simulation_config_t), intent(inout) :: config

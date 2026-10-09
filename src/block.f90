@@ -29,7 +29,8 @@ module block
  contains
  
      subroutine init_block(mesh_source, type_of_mesh,material_source,response,fd_type, order_fd, interpol, &
-       use_topography, topo, B, problem, btp, block_comm,infile,id,ny,nz,q4_config,q8_config,cq_config,fq8_config,process_dims,debug)
+       use_topography, topo, B, problem, btp, block_comm,infile,id,ny,nz,q4_config,q8_config,cq_config,fq_config, &
+       fq8_config,process_dims,debug)
  
      !> @brief initialize a block
  
@@ -48,7 +49,9 @@ module block
      use anelastic_q4_model, only : q4_parameters
      use anelastic_q8_model, only : q8_parameters
      use anelastic_cq_model, only : cq_parameters
+     use anelastic_fq_model, only : fq_parameters
      use anelastic_cq_material, only : init_anelastic_cq_properties
+     use anelastic_fq_material, only : init_anelastic_fq_properties
      use anelastic_fq8_model, only : fq8_parameters
      use decomposition_safety, only : stencil_requirements_t, get_stencil_requirements
      implicit none
@@ -59,6 +62,7 @@ module block
      type(q4_parameters), intent(in) :: q4_config
      type(q8_parameters), intent(in) :: q8_config
      type(cq_parameters), intent(in) :: cq_config
+     type(fq_parameters), intent(in) :: fq_config
      type(fq8_parameters), intent(in) :: fq8_config
      type(block_type),intent(out) :: B
      integer, intent(in) :: block_comm,infile
@@ -164,6 +168,11 @@ module block
         call init_anelastic_cq_properties(B%M,B%G,cq_config,id)
       else
         B%M%anelastic_cQ=.false.
+      end if
+      if (trim(response) == 'anelastic-fQ') then
+        call init_anelastic_fq_properties(B%M,B%G,fq_config,id)
+      else
+        B%M%anelastic_fQ=.false.
       end if
 
       if (trim(response) == 'anelastic-Qf') then
