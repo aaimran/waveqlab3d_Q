@@ -162,6 +162,11 @@ add_executable(fq_coefficients_test
 wql3d_setup_target(fq_coefficients_test)
 add_test(NAME fq_coefficients_unit COMMAND $<TARGET_FILE:fq_coefficients_test>)
 
+add_executable(fq_transition_test
+  common.f90 withers_tables.f90 anelastic_fq_model.f90 ../tests/fq_transition_test.f90)
+wql3d_setup_target(fq_transition_test)
+add_test(NAME fq_transition_unit COMMAND $<TARGET_FILE:fq_transition_test>)
+
 add_executable(fq8_effective_response_test
   common.f90
   withers_tables.f90
@@ -216,6 +221,29 @@ add_test(NAME mpi_test1
     "-Dn=${no_mpi_proc}"
     -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/run_mpi_test.cmake)
 endif()
+
+add_test(NAME fq_smooth_dynamic_decomposition
+  COMMAND ${CMAKE_COMMAND}
+    "-DMPI_CONFIG=${CMAKE_CURRENT_BINARY_DIR}/mpi_test_config.cmake"
+    "-DEXE=$<TARGET_FILE:waveqlab3d>"
+    "-DINPUT=${CMAKE_CURRENT_SOURCE_DIR}/../inputfile/test_anelastic_fQ_smooth.in"
+    "-DSTATE_LABEL=fQ"
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/run_q8_dynamic_regression.cmake)
+
+add_test(NAME fq_smooth_custom_width_decomposition
+  COMMAND ${CMAKE_COMMAND}
+    "-DMPI_CONFIG=${CMAKE_CURRENT_BINARY_DIR}/mpi_test_config.cmake"
+    "-DEXE=$<TARGET_FILE:waveqlab3d>"
+    "-DINPUT=${CMAKE_CURRENT_SOURCE_DIR}/../inputfile/test_anelastic_fQ_smooth.in"
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/run_fq_smooth_custom_regression.cmake)
+
+add_test(NAME fq_smooth_dynamic_pml_decomposition
+  COMMAND ${CMAKE_COMMAND}
+    "-DMPI_CONFIG=${CMAKE_CURRENT_BINARY_DIR}/mpi_test_config.cmake"
+    "-DEXE=$<TARGET_FILE:waveqlab3d>"
+    "-DINPUT=${CMAKE_CURRENT_SOURCE_DIR}/../inputfile/test_anelastic_fQ_smooth.in"
+    "-DSTATE_LABEL=fQ"
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/run_fq_pml_regression.cmake)
 
 add_test(NAME fq_dynamic_decomposition
   COMMAND ${CMAKE_COMMAND}

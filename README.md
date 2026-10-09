@@ -139,6 +139,10 @@ strength tables are not supported by this response.
 Each block has its own P/S Q plateau, with both values at least 15. The shared
 law is `Q(f)=Q0` below `f_transition`, and
 `Q(f)=Q0*(f/f_transition)**gamma` above it; `gamma` must be in `[0,0.9]`.
+The default `transition_policy='sharp'` preserves this law. With
+`transition_policy='smooth'`, Q remains constant up to the lower transition
+boundary, then joins the power law at the upper boundary.
+
 `fmin` and `fmax` set the fitting band, while `fref` sets the storage-modulus
 normalization frequency and must lie within that band. The transition may lie
 outside the band. P and S strengths are fitted independently in each block and
@@ -151,8 +155,35 @@ fitting conventional nonnegative full-layout strengths. To compare with the
 existing conventional full-layout fQ8 fit, use this policy with
 `fmin=0.1*f_transition` and `fmax=10*f_transition`.
 
+Optional transition controls are:
+
+```fortran
+  transition_policy = 'smooth'       ! default: 'sharp'
+  transition_lower_ratio = 0.8       ! default: 0.8
+  transition_upper_ratio = 1.2       ! default: 1.2
+```
+
+The boundaries are the ratios multiplied by `f_transition`. The smooth target
+uses a cubic Hermite bridge in log-frequency and log-Q, matching the plateau's
+zero slope and the power law's `gamma` slope. Q and its first derivative are
+continuous at both joins. `Qs0` and `Qp0` remain plateau values; with smoothing,
+Q at `f_transition` is generally slightly above that plateau.
+
+Ratios must be finite with `0 < lower < 1 < upper`. For a monotonic cubic bridge,
+smooth mode additionally requires `lower >= upper**(-2)`. Very asymmetric
+intervals violating this condition are rejected because they would introduce
+a dip below the plateau. Boundaries may lie outside the fitting band, but must
+remain finite and positive. The transition settings are shared by both blocks
+and P/S targets. Relaxation times and reference-modulus normalization are not
+changed by smoothing.
+
+This is inspired by the paper's 0.8-1.2 transition interval, not an exact
+implementation of its stated intermediate power law. The smooth example is
+`inputfile/test_anelastic_fQ_smooth.in`.
+
 The fit must converge within `nnls_max_iterations` and pass the relative Q error
-bound on a dense grid, including the transition frequency. Unsupported policies,
+bound on a dense grid, explicitly checking the transition frequency and, for
+smooth mode, both joins that fall within the fitting band. Unsupported policies,
 negative strengths, and non-positive relaxed moduli fail initialization.
 Fewer mechanisms may need a narrower frequency band or a larger explicit error
 bound: the example with four mechanisms has approximately 25% maximum Q error,

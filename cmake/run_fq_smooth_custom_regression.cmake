@@ -1,0 +1,18 @@
+include("${MPI_CONFIG}")
+file(READ "${INPUT}" text)
+string(REPLACE "transition_lower_ratio=0.8d0" "transition_lower_ratio=0.7d0" text "${text}")
+string(REPLACE "transition_upper_ratio=1.2d0" "transition_upper_ratio=1.5d0" text "${text}")
+set(custom_input "${CMAKE_CURRENT_BINARY_DIR}/fq_smooth_custom.in")
+file(WRITE "${custom_input}" "${text}")
+set(INPUT "${custom_input}")
+set(STATE_LABEL fQ)
+include("${CMAKE_CURRENT_LIST_DIR}/run_q8_dynamic_regression.cmake")
+# Both block summaries must report the custom joins on one and two ranks.
+foreach(run_output output1 output2)
+  string(REGEX MATCHALL "transition lower/upper Hz= +7[.]0000E-01 +1[.]5000E[+]00"
+    edge_lines "${${run_output}}")
+  list(LENGTH edge_lines edge_count)
+  if(NOT edge_count EQUAL 2)
+    message(FATAL_ERROR "Custom transition widths did not reach both blocks: ${${run_output}}")
+  endif()
+endforeach()

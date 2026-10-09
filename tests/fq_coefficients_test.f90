@@ -25,8 +25,8 @@ program fq_coefficients_test
         if(any(tau <= 0.0_wp) .or. any(ss < 0.0_wp) .or. any(sp < 0.0_wp)) error stop 'invalid coefficients'
         if(sum(ss) >= 1.0_wp .or. sum(sp) >= 1.0_wp) error stop 'invalid relaxed modulus'
         if(maxval(abs(ss-sp)) < 1.0e-8_wp) error stop 'P/S fits must differ'
-        call fq_max_relative_error(p%Qs0(b),p%gamma,p%f_transition,tau,ss,p%fmin,p%fmax,es)
-        call fq_max_relative_error(p%Qp0(b),p%gamma,p%f_transition,tau,sp,p%fmin,p%fmax,ep)
+        call fq_max_relative_error(p%Qs0(b),p,tau,ss,es)
+        call fq_max_relative_error(p%Qp0(b),p,tau,sp,ep)
         print *, 'mechanisms/block/error:',n,b,es,ep
         if(max(es,ep) > p%max_fit_error) error stop 'fit accuracy'
      enddo

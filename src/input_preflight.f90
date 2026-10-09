@@ -884,6 +884,9 @@ contains
     call MPI_Bcast(config%fq%gamma,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
     call MPI_Bcast(config%fq%f_transition,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
     call MPI_Bcast(config%fq%nnls_max_iterations,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+    call bcast_chars(config%fq%transition_policy)
+    call MPI_Bcast(config%fq%transition_lower_ratio,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+    call MPI_Bcast(config%fq%transition_upper_ratio,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
   end subroutine broadcast_fq
 
   subroutine broadcast_fq8(config)

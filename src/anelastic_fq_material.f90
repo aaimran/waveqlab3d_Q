@@ -63,10 +63,8 @@ contains
         any(M%strength_p_fQ < 0.0_wp)) &
          call error('anelastic-fQ produced invalid coefficients','init_anelastic_fq_properties')
 
-    call fq_max_relative_error(M%Qs0_fQ,parameters%gamma,parameters%f_transition,M%tau_fQ,M%strength_s_fQ, &
-         parameters%fmin,parameters%fmax,max_s)
-    call fq_max_relative_error(M%Qp0_fQ,parameters%gamma,parameters%f_transition,M%tau_fQ,M%strength_p_fQ, &
-         parameters%fmin,parameters%fmax,max_p)
+    call fq_max_relative_error(M%Qs0_fQ,parameters,M%tau_fQ,M%strength_s_fQ,max_s)
+    call fq_max_relative_error(M%Qp0_fQ,parameters,M%tau_fQ,M%strength_p_fQ,max_p)
     if (max(max_s,max_p) > parameters%max_fit_error) then
        write(fit_message,'(A,ES10.3,A,ES10.3,A,ES10.3)') &
             'anelastic-fQ fitted response exceeds max_fit_error: S=',max_s, &
@@ -115,6 +113,10 @@ contains
        write(*,'(A,A)') '  coefficient policy=',trim(parameters%coefficient_policy)
        write(*,'(A,ES12.4,A,ES12.4)') '  gamma=',parameters%gamma,', transition Hz=',parameters%f_transition
        write(*,'(A,A)') '  relaxation policy=',trim(parameters%relaxation_policy)
+       write(*,'(A,A)') '  transition policy=',trim(parameters%transition_policy)
+       if(parameters%transition_policy == 'smooth') write(*,'(A,2ES12.4)') &
+            '  transition lower/upper Hz=',parameters%f_transition*parameters%transition_lower_ratio, &
+            parameters%f_transition*parameters%transition_upper_ratio
        write(*,'(A,F8.3,A,F8.3,A)') '  max relative Q error: S=',100.0_wp*max_s, &
             ' %, P=',100.0_wp*max_p,' %'
     end if

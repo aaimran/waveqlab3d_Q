@@ -7,6 +7,8 @@ module anelastic_fq_model
   type, public :: fq_parameters
      real(wp) :: Qs0(2)=-1.0_wp, Qp0(2)=-1.0_wp
      real(wp) :: gamma=0.0_wp, f_transition=1.0_wp
+     character(len=32) :: transition_policy='sharp'
+     real(wp) :: transition_lower_ratio=0.8_wp, transition_upper_ratio=1.2_wp
      real(wp) :: fref=1.0_wp, fmin=0.05_wp, fmax=20.0_wp
      integer :: n_mechanisms=8, nnls_samples=256, nnls_max_iterations=200000
      character(len=32) :: coefficient_policy='nnls-block-ps'
@@ -22,12 +24,16 @@ contains
     integer, intent(out) :: status
     character(*), intent(out) :: message
     real(wp) :: Qs0(2),Qp0(2),gamma,f_transition,fref,fmin,fmax,nnls_tolerance,max_fit_error
+    real(wp) :: transition_lower_ratio,transition_upper_ratio
+    character(len=32) :: transition_policy
     integer :: n_mechanisms,nnls_samples,nnls_max_iterations,stat
     character(len=32) :: coefficient_policy,relaxation_policy,nnls_objective
     namelist /anelastic_fQ_list/ Qs0,Qp0,gamma,f_transition,fref,fmin,fmax,n_mechanisms, &
          coefficient_policy,relaxation_policy,nnls_objective,nnls_samples,nnls_tolerance, &
-         nnls_max_iterations,max_fit_error
+         nnls_max_iterations,max_fit_error,transition_policy,transition_lower_ratio,transition_upper_ratio
     Qs0=p%Qs0; Qp0=p%Qp0; gamma=p%gamma; f_transition=p%f_transition
+    transition_policy=p%transition_policy
+    transition_lower_ratio=p%transition_lower_ratio; transition_upper_ratio=p%transition_upper_ratio
     fref=p%fref; fmin=p%fmin; fmax=p%fmax; n_mechanisms=p%n_mechanisms
     coefficient_policy=p%coefficient_policy; relaxation_policy=p%relaxation_policy
     nnls_objective=p%nnls_objective; nnls_samples=p%nnls_samples
@@ -37,6 +43,8 @@ contains
     status=1; message='anelastic-fQ requires a valid &anelastic_fQ_list'
     if(stat /= 0) return
     p%Qs0=Qs0; p%Qp0=Qp0; p%gamma=gamma; p%f_transition=f_transition
+    p%transition_policy=trim(adjustl(transition_policy))
+    p%transition_lower_ratio=transition_lower_ratio; p%transition_upper_ratio=transition_upper_ratio
     p%fref=fref; p%fmin=fmin; p%fmax=fmax; p%n_mechanisms=n_mechanisms
     p%coefficient_policy=trim(adjustl(coefficient_policy)); p%relaxation_policy=trim(adjustl(relaxation_policy))
     p%nnls_objective=trim(adjustl(nnls_objective)); p%nnls_samples=nnls_samples
@@ -48,7 +56,7 @@ contains
     type(fq_parameters), intent(in) :: p
     integer, intent(out) :: status
     character(*), intent(out) :: message
-    real(wp) :: tau(8)
+    real(wp) :: tau(8),edges(2)
     status=1
     message='anelastic-fQ requires two finite Qs0 and Qp0 values >= 15'
     if(any(.not.ieee_is_finite(p%Qs0)) .or. any(.not.ieee_is_finite(p%Qp0))) return
@@ -56,6 +64,20 @@ contains
     message='anelastic-fQ requires finite gamma in [0,0.9] and positive f_transition'
     if(.not.ieee_is_finite(p%gamma) .or. .not.ieee_is_finite(p%f_transition)) return
     if(p%gamma < 0.0_wp .or. p%gamma > 0.9_wp .or. p%f_transition <= 0.0_wp) return
+    message='anelastic-fQ transition_policy must be sharp or smooth'
+    if(p%transition_policy /= 'sharp' .and. p%transition_policy /= 'smooth') return
+    message='anelastic-fQ requires finite transition ratios with 0 < lower < 1 < upper'
+    if(.not.all(ieee_is_finite([p%transition_lower_ratio,p%transition_upper_ratio]))) return
+    if(p%transition_lower_ratio <= 0.0_wp .or. p%transition_lower_ratio >= 1.0_wp .or. &
+       p%transition_upper_ratio <= 1.0_wp) return
+    if(p%transition_policy == 'smooth') then
+       ! For the cubic bridge, slope >= 0 requires log(upper/lower) <= 3*log(upper).
+       message='anelastic-fQ monotone smooth transition requires lower >= upper**(-2)'
+       if(log(p%transition_lower_ratio)+2.0_wp*log(p%transition_upper_ratio) < 0.0_wp) return
+       edges=p%f_transition*[p%transition_lower_ratio,p%transition_upper_ratio]
+       message='anelastic-fQ smooth transition boundaries must be finite and positive'
+       if(.not.all(ieee_is_finite(edges)) .or. any(edges <= 0.0_wp)) return
+    endif
     message='anelastic-fQ requires 0 < fmin < fmax and fmin <= fref <= fmax'
     if(.not.all(ieee_is_finite([p%fmin,p%fmax,p%fref]))) return
     if(p%fmin <= 0.0_wp .or. p%fmax <= p%fmin .or. p%fref < p%fmin .or. p%fref > p%fmax) return
@@ -76,10 +98,31 @@ contains
     status=0; message=''
   end subroutine
 
-  pure real(wp) function fq_target_q(f,q0,gamma,transition) result(q)
-    real(wp), intent(in) :: f,q0,gamma,transition
+  pure real(wp) function fq_target_q(f,q0,p) result(q)
+    real(wp), intent(in) :: f,q0
+    type(fq_parameters), intent(in) :: p
+    real(wp) :: lower,upper,span,u,log_upper,log_q
     q=q0
-    if(f > transition) q=q0*(f/transition)**gamma
+    if(p%gamma == 0.0_wp) return
+    if(p%transition_policy == 'sharp') then
+       ! Preserve the original sharp calculation, including its rounding.
+       if(f > p%f_transition) q=q0*(f/p%f_transition)**p%gamma
+       return
+    endif
+    lower=p%f_transition*p%transition_lower_ratio
+    upper=p%f_transition*p%transition_upper_ratio
+    if(f <= lower) return
+    if(f >= upper) then
+       q=q0*(f/p%f_transition)**p%gamma
+       return
+    endif
+    log_upper=log(p%transition_upper_ratio)
+    span=log_upper-log(p%transition_lower_ratio)
+    u=(log(f)-log(lower))/span
+    ! Cubic Hermite bridge in log(f),log(Q/Q0): values 0,gamma*log(upper)
+    ! and log-log slopes 0,gamma at the two joins. Width validation prevents dips.
+    log_q=p%gamma*u*u*((3.0_wp-2.0_wp*u)*log_upper+(u-1.0_wp)*span)
+    q=q0*exp(log_q)
   end function
 
   subroutine relaxation_times(p,tau)
@@ -120,8 +163,8 @@ contains
     if(.not.all(ieee_is_finite(tau)) .or. any(tau <= 0.0_wp)) return
     if(.not.all(ieee_is_finite(ss)) .or. .not.all(ieee_is_finite(sp))) return
     if(any(ss < 0.0_wp) .or. any(sp < 0.0_wp) .or. sum(ss) >= 1.0_wp .or. sum(sp) >= 1.0_wp) return
-    call fq_max_relative_error(p%Qs0(block_id),p%gamma,p%f_transition,tau,ss,p%fmin,p%fmax,es)
-    call fq_max_relative_error(p%Qp0(block_id),p%gamma,p%f_transition,tau,sp,p%fmin,p%fmax,ep)
+    call fq_max_relative_error(p%Qs0(block_id),p,tau,ss,es)
+    call fq_max_relative_error(p%Qp0(block_id),p,tau,sp,ep)
     if(max(es,ep) > p%max_fit_error) then
        write(message,'(A,ES10.3,A,ES10.3,A,ES10.3)') &
             'anelastic-fQ fitted response exceeds max_fit_error: S=',es,', P=',ep,', limit=',p%max_fit_error
@@ -142,7 +185,7 @@ contains
     integer :: i,k,iter
     do i=1,p%nnls_samples
        f=p%fmin*(p%fmax/p%fmin)**(real(i-1,wp)/real(p%nnls_samples-1,wp))
-       q=fq_target_q(f,q0,p%gamma,p%f_transition)
+       q=fq_target_q(f,q0,p)
        do k=1,size(tau)
           x=2.0_wp*pi*f*tau(k)
           ! w=q0*strength. At gamma=0 this is the cQ relative-Q system.
@@ -179,31 +222,35 @@ contains
     enddo
   end function
 
-  pure subroutine fq_max_relative_error(q0,gamma,transition,tau,strength,fmin,fmax,max_error)
-    real(wp), intent(in) :: q0,gamma,transition,tau(:),strength(:),fmin,fmax
+  pure subroutine fq_max_relative_error(q0,p,tau,strength,max_error)
+    real(wp), intent(in) :: q0,tau(:),strength(:)
+    type(fq_parameters), intent(in) :: p
     real(wp), intent(out) :: max_error
-    real(wp) :: f,q,error
+    real(wp) :: f,q,error,check_frequencies(3)
     complex(wp) :: response
     integer :: i
     max_error=0.0_wp
-    ! Dense validation independent of the number of fitting samples.
-    do i=1,1025
-       f=fmin*(fmax/fmin)**(real(i-1,wp)/1024.0_wp)
+    ! Dense validation plus explicit transition joins, independent of fit samples.
+    check_frequencies=p%f_transition
+    if(p%transition_policy == 'smooth') then
+       check_frequencies=[p%f_transition*p%transition_lower_ratio,p%f_transition, &
+                          p%f_transition*p%transition_upper_ratio]
+    endif
+    do i=1,1028
+       if(i <= 1025) then
+          f=p%fmin*(p%fmax/p%fmin)**(real(i-1,wp)/1024.0_wp)
+       else
+          f=check_frequencies(i-1025)
+          if(f < p%fmin .or. f > p%fmax) cycle
+       endif
        response=fq_response(f,tau,strength)
        if(aimag(response) <= tiny(1.0_wp)) then
           max_error=huge(1.0_wp); return
        endif
        q=real(response,wp)/aimag(response)
-       error=abs(q/fq_target_q(f,q0,gamma,transition)-1.0_wp)
+       error=abs(q/fq_target_q(f,q0,p)-1.0_wp)
        max_error=max(max_error,error)
     enddo
-    if(transition >= fmin .and. transition <= fmax) then
-       response=fq_response(transition,tau,strength)
-       if(aimag(response) <= tiny(1.0_wp)) then
-          max_error=huge(1.0_wp); return
-       endif
-       max_error=max(max_error,abs(real(response,wp)/aimag(response)/q0-1.0_wp))
-    endif
   end subroutine
 
   real(wp) function fq_relaxation_dt_limit(p) result(limit)
