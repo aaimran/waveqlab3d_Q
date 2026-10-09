@@ -1,11 +1,12 @@
+include("${MPI_CONFIG}")
 file(READ "${INPUT}" input_text)
 foreach(n RANGE 4 8)
   string(REPLACE "n_mechanisms=8" "n_mechanisms=${n}" case_text "${input_text}")
   set(case_input "${CMAKE_CURRENT_BINARY_DIR}/test_anelastic_cQ_n${n}.in")
   file(WRITE "${case_input}" "${case_text}")
-  execute_process(COMMAND "${MPIEXEC}" -np 1 "${EXE}" "${case_input}"
+  execute_process(COMMAND "${MPIEXEC}" ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} "${EXE}" ${MPIEXEC_POSTFLAGS} "${case_input}"
     RESULT_VARIABLE result OUTPUT_VARIABLE output ERROR_VARIABLE error)
-  if(NOT result EQUAL 0)
+  if(NOT result STREQUAL "0")
     message(FATAL_ERROR "anelastic-cQ N=${n} failed: ${error}\n${output}")
   endif()
   string(FIND "${output}" "anelastic-cQ mechanisms: ${n}" count_position)

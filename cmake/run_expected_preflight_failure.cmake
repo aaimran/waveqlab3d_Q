@@ -1,9 +1,10 @@
+include("${MPI_CONFIG}")
 execute_process(
-  COMMAND "${MPIEXEC}" -np "${NPROCS}" "${EXE}" "${INPUT}"
+  COMMAND "${MPIEXEC}" ${MPIEXEC_NUMPROC_FLAG} "${NPROCS}" ${MPIEXEC_PREFLAGS} "${EXE}" ${MPIEXEC_POSTFLAGS} "${INPUT}"
   RESULT_VARIABLE result
   OUTPUT_VARIABLE output
   ERROR_VARIABLE error)
-if(result EQUAL 0)
+if(result STREQUAL "0")
   message(FATAL_ERROR "invalid input unexpectedly succeeded")
 endif()
 string(CONCAT combined "${output}" "${error}")

@@ -1,3 +1,4 @@
+include("${MPI_CONFIG}")
 file(READ "${INPUT}" input_text)
 set(cases n3 n9 fixed4)
 foreach(case_name IN LISTS cases)
@@ -12,7 +13,7 @@ foreach(case_name IN LISTS cases)
   endif()
   set(case_input "${CMAKE_CURRENT_BINARY_DIR}/test_anelastic_cQ_invalid_${case_name}.in")
   file(WRITE "${case_input}" "${case_text}")
-  execute_process(COMMAND "${MPIEXEC}" -np 1 "${EXE}" "${case_input}"
+  execute_process(COMMAND "${MPIEXEC}" ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} "${EXE}" ${MPIEXEC_POSTFLAGS} "${case_input}"
     OUTPUT_VARIABLE output ERROR_VARIABLE error)
   string(FIND "${output}${error}" "CFG-CQ-001" diagnostic_position)
   if(diagnostic_position EQUAL -1)

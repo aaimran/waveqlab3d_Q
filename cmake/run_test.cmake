@@ -1,15 +1,22 @@
-set(dir ${CMAKE_CURRENT_BINARY_DIR}/test/${t})
-execute_process(
-  WORKING_DIRECTORY ${dir}
-  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/../test_problems/${in} ${in}
-  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/../test_problems/truth/${t} truth
-  COMMAND mpirun -n 1 ${CMAKE_CURRENT_BINARY_DIR}/pre_wql3d ${in}
-  COMMAND mpirun -n ${n} ${CMAKE_CURRENT_BINARY_DIR}/waveqlab3d ${in})
-set(results 0)
-execute_process(
-  COMMAND ${CMAKE_CURRENT_BINARY_DIR}/../python/read_binary.py ${dir} ${prefix}
-  RESULT_VARIABLE test_fail)
-math(EXPR results "${results} + ${test_fail}")
-if (results)
-  message( SEND_ERROR "waveqlab3d output for ${in} does not match true solution." )
-endif (results)
+include("${MPI_CONFIG}")
+set(dir "${CMAKE_CURRENT_BINARY_DIR}/test/${t}")
+file(MAKE_DIRECTORY "${dir}/data")
+configure_file("${ROOT}/test_problems/${in}" "${dir}/${in}" COPYONLY)
+file(COPY "${ROOT}/test_problems/truth/${t}/" DESTINATION "${dir}/truth")
+execute_process(COMMAND "${MPIEXEC}" ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS}
+  "${PRE_EXE}" ${MPIEXEC_POSTFLAGS} "${in}"
+  WORKING_DIRECTORY "${dir}" RESULT_VARIABLE result)
+if(NOT result STREQUAL "0")
+  message(FATAL_ERROR "Preprocessor failed: ${result}")
+endif()
+execute_process(COMMAND "${MPIEXEC}" ${MPIEXEC_NUMPROC_FLAG} ${n} ${MPIEXEC_PREFLAGS}
+  "${EXE}" ${MPIEXEC_POSTFLAGS} "${in}"
+  WORKING_DIRECTORY "${dir}" RESULT_VARIABLE result)
+if(NOT result STREQUAL "0")
+  message(FATAL_ERROR "Solver failed: ${result}")
+endif()
+execute_process(COMMAND "${PYTHON}" "${ROOT}/python/read_binary.py" "${dir}" "${prefix}"
+  RESULT_VARIABLE result)
+if(NOT result STREQUAL "0")
+  message(FATAL_ERROR "Output comparison failed for ${in}: ${result}")
+endif()

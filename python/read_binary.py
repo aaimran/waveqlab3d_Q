@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 from sys import argv, exit
 import numpy as np
-import matplotlib.pyplot as plt
 
 
 dir1 = 'truth'
@@ -35,5 +34,5 @@ for nfields, fname in _files:
     diffabs = np.sqrt(diff*diff)
 
     if np.amax(diffabs) > 1.0e-3:
-      print fname, np.amax(diffabs)
+      print(fname, np.amax(diffabs))
       exit(1)

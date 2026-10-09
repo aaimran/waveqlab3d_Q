@@ -1,9 +1,10 @@
+include("${MPI_CONFIG}")
 execute_process(
-  COMMAND "${MPIEXEC}" -np 2 "${EXE}" "${INPUT}"
+  COMMAND "${MPIEXEC}" ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} "${EXE}" ${MPIEXEC_POSTFLAGS} "${INPUT}"
   RESULT_VARIABLE result
   OUTPUT_VARIABLE output
   ERROR_VARIABLE error)
-if(NOT result EQUAL 0)
+if(NOT result STREQUAL "0")
   message(FATAL_ERROR "deprecated Q4 alias run failed: ${error}")
 endif()
 string(REGEX MATCHALL "CFG-Q4-DEP-001" warnings "${output}")

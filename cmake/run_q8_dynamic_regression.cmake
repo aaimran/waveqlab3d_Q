@@ -1,22 +1,23 @@
+include("${MPI_CONFIG}")
 if(NOT DEFINED STATE_LABEL)
   set(STATE_LABEL Q8)
 endif()
 
 execute_process(
-  COMMAND "${MPIEXEC}" -np 1 "${EXE}" "${INPUT}"
+  COMMAND "${MPIEXEC}" ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} "${EXE}" ${MPIEXEC_POSTFLAGS} "${INPUT}"
   RESULT_VARIABLE result1
   OUTPUT_VARIABLE output1
   ERROR_VARIABLE error1)
-if(NOT result1 EQUAL 0)
+if(NOT result1 STREQUAL "0")
   message(FATAL_ERROR "one-rank ${STATE_LABEL} dynamic run failed: ${error1}")
 endif()
 
 execute_process(
-  COMMAND "${MPIEXEC}" -np 2 "${EXE}" "${INPUT}"
+  COMMAND "${MPIEXEC}" ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} "${EXE}" ${MPIEXEC_POSTFLAGS} "${INPUT}"
   RESULT_VARIABLE result2
   OUTPUT_VARIABLE output2
   ERROR_VARIABLE error2)
-if(NOT result2 EQUAL 0)
+if(NOT result2 STREQUAL "0")
   message(FATAL_ERROR "two-rank ${STATE_LABEL} dynamic run failed: ${error2}")
 endif()
 
