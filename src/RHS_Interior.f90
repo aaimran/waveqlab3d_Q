@@ -255,6 +255,10 @@ contains
                if (M%anelastic_Q8) call apply_anelastic_Q8_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_cQ) call apply_anelastic_cQ_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_fQ) call apply_anelastic_fQ_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
+               if (allocated(M%cq8_cg).or.allocated(M%fq8_cg)) &
+                    call apply_cg8_point_dispatch(F,M,G,x,y,z,Ux,Uy,Uz,DU)
+               if(allocated(M%cq_cg_t).or.allocated(M%fq_cg_t)) &
+                    call apply_cgt_point_dispatch(F,M,G,x,y,z,Ux,Uy,Uz,DU)
                if (M%anelastic_Qf) call apply_anelastic_Qf_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_const_Q_4M) call apply_const_Q_4M_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_const_Q_4M) call apply_const_Q_4M_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
@@ -342,6 +346,10 @@ contains
                if (M%anelastic_Q8) call apply_anelastic_Q8_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_cQ) call apply_anelastic_cQ_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_fQ) call apply_anelastic_fQ_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
+               if (allocated(M%cq8_cg).or.allocated(M%fq8_cg)) &
+                    call apply_cg8_point_dispatch(F,M,G,x,y,z,Ux,Uy,Uz,DU)
+               if(allocated(M%cq_cg_t).or.allocated(M%fq_cg_t)) &
+                    call apply_cgt_point_dispatch(F,M,G,x,y,z,Ux,Uy,Uz,DU)
                if (M%anelastic_Qf) call apply_anelastic_Qf_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_const_Q_4M) call apply_const_Q_4M_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                
@@ -427,6 +435,10 @@ contains
                if (M%anelastic_Q8) call apply_anelastic_Q8_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_cQ) call apply_anelastic_cQ_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_fQ) call apply_anelastic_fQ_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
+               if (allocated(M%cq8_cg).or.allocated(M%fq8_cg)) &
+                    call apply_cg8_point_dispatch(F,M,G,x,y,z,Ux,Uy,Uz,DU)
+               if(allocated(M%cq_cg_t).or.allocated(M%fq_cg_t)) &
+                    call apply_cgt_point_dispatch(F,M,G,x,y,z,Ux,Uy,Uz,DU)
                if (M%anelastic_Qf) call apply_anelastic_Qf_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_const_Q_4M) call apply_const_Q_4M_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                
@@ -513,6 +525,10 @@ contains
                if (M%anelastic_Q8) call apply_anelastic_Q8_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_cQ) call apply_anelastic_cQ_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_fQ) call apply_anelastic_fQ_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
+               if (allocated(M%cq8_cg).or.allocated(M%fq8_cg)) &
+                    call apply_cg8_point_dispatch(F,M,G,x,y,z,Ux,Uy,Uz,DU)
+               if(allocated(M%cq_cg_t).or.allocated(M%fq_cg_t)) &
+                    call apply_cgt_point_dispatch(F,M,G,x,y,z,Ux,Uy,Uz,DU)
                if (M%anelastic_Qf) call apply_anelastic_Qf_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_const_Q_4M) call apply_const_Q_4M_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                
@@ -598,6 +614,10 @@ contains
                if (M%anelastic_Q8) call apply_anelastic_Q8_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_cQ) call apply_anelastic_cQ_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_fQ) call apply_anelastic_fQ_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
+               if (allocated(M%cq8_cg).or.allocated(M%fq8_cg)) &
+                    call apply_cg8_point_dispatch(F,M,G,x,y,z,Ux,Uy,Uz,DU)
+               if(allocated(M%cq_cg_t).or.allocated(M%fq_cg_t)) &
+                    call apply_cgt_point_dispatch(F,M,G,x,y,z,Ux,Uy,Uz,DU)
                if (M%anelastic_Qf) call apply_anelastic_Qf_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_const_Q_4M) call apply_const_Q_4M_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                
@@ -691,6 +711,10 @@ contains
                if (M%anelastic_Q8) call apply_anelastic_Q8_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_cQ) call apply_anelastic_cQ_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_fQ) call apply_anelastic_fQ_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
+               if (allocated(M%cq8_cg).or.allocated(M%fq8_cg)) &
+                    call apply_cg8_point_dispatch(F,M,G,x,y,z,Ux,Uy,Uz,DU)
+               if(allocated(M%cq_cg_t).or.allocated(M%fq_cg_t)) &
+                    call apply_cgt_point_dispatch(F,M,G,x,y,z,Ux,Uy,Uz,DU)
                if (M%anelastic_Qf) call apply_anelastic_Qf_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_const_Q_4M) call apply_const_Q_4M_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                  
@@ -782,6 +806,10 @@ contains
                if (M%anelastic_Q8) call apply_anelastic_Q8_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_cQ) call apply_anelastic_cQ_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_fQ) call apply_anelastic_fQ_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
+               if (allocated(M%cq8_cg).or.allocated(M%fq8_cg)) &
+                    call apply_cg8_point_dispatch(F,M,G,x,y,z,Ux,Uy,Uz,DU)
+               if(allocated(M%cq_cg_t).or.allocated(M%fq_cg_t)) &
+                    call apply_cgt_point_dispatch(F,M,G,x,y,z,Ux,Uy,Uz,DU)
                if (M%anelastic_Qf) call apply_anelastic_Qf_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_const_Q_4M) call apply_const_Q_4M_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                  
@@ -874,6 +902,10 @@ contains
                if (M%anelastic_Q8) call apply_anelastic_Q8_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_cQ) call apply_anelastic_cQ_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_fQ) call apply_anelastic_fQ_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
+               if (allocated(M%cq8_cg).or.allocated(M%fq8_cg)) &
+                    call apply_cg8_point_dispatch(F,M,G,x,y,z,Ux,Uy,Uz,DU)
+               if(allocated(M%cq_cg_t).or.allocated(M%fq_cg_t)) &
+                    call apply_cgt_point_dispatch(F,M,G,x,y,z,Ux,Uy,Uz,DU)
                if (M%anelastic_Qf) call apply_anelastic_Qf_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_const_Q_4M) call apply_const_Q_4M_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                  
@@ -966,6 +998,10 @@ contains
                if (M%anelastic_Q8) call apply_anelastic_Q8_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_cQ) call apply_anelastic_cQ_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_fQ) call apply_anelastic_fQ_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
+               if (allocated(M%cq8_cg).or.allocated(M%fq8_cg)) &
+                    call apply_cg8_point_dispatch(F,M,G,x,y,z,Ux,Uy,Uz,DU)
+               if(allocated(M%cq_cg_t).or.allocated(M%fq_cg_t)) &
+                    call apply_cgt_point_dispatch(F,M,G,x,y,z,Ux,Uy,Uz,DU)
                if (M%anelastic_Qf) call apply_anelastic_Qf_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_const_Q_4M) call apply_const_Q_4M_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                  
@@ -1055,6 +1091,10 @@ contains
                if (M%anelastic_Q8) call apply_anelastic_Q8_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_cQ) call apply_anelastic_cQ_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_fQ) call apply_anelastic_fQ_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
+               if (allocated(M%cq8_cg).or.allocated(M%fq8_cg)) &
+                    call apply_cg8_point_dispatch(F,M,G,x,y,z,Ux,Uy,Uz,DU)
+               if(allocated(M%cq_cg_t).or.allocated(M%fq_cg_t)) &
+                    call apply_cgt_point_dispatch(F,M,G,x,y,z,Ux,Uy,Uz,DU)
                if (M%anelastic_Qf) call apply_anelastic_Qf_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_const_Q_4M) call apply_const_Q_4M_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                
@@ -1134,6 +1174,10 @@ contains
                if (M%anelastic_Q8) call apply_anelastic_Q8_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_cQ) call apply_anelastic_cQ_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_fQ) call apply_anelastic_fQ_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
+               if (allocated(M%cq8_cg).or.allocated(M%fq8_cg)) &
+                    call apply_cg8_point_dispatch(F,M,G,x,y,z,Ux,Uy,Uz,DU)
+               if(allocated(M%cq_cg_t).or.allocated(M%fq_cg_t)) &
+                    call apply_cgt_point_dispatch(F,M,G,x,y,z,Ux,Uy,Uz,DU)
                if (M%anelastic_Qf) call apply_anelastic_Qf_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_const_Q_4M) call apply_const_Q_4M_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                  
@@ -1212,6 +1256,10 @@ if (F%order .eq. 5) then
                if (M%anelastic_Q8) call apply_anelastic_Q8_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_cQ) call apply_anelastic_cQ_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_fQ) call apply_anelastic_fQ_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
+               if (allocated(M%cq8_cg).or.allocated(M%fq8_cg)) &
+                    call apply_cg8_point_dispatch(F,M,G,x,y,z,Ux,Uy,Uz,DU)
+               if(allocated(M%cq_cg_t).or.allocated(M%fq_cg_t)) &
+                    call apply_cgt_point_dispatch(F,M,G,x,y,z,Ux,Uy,Uz,DU)
                if (M%anelastic_Qf) call apply_anelastic_Qf_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_const_Q_4M) call apply_const_Q_4M_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                  
@@ -1304,6 +1352,10 @@ if (F%order .eq. 6) then
                if (M%anelastic_Q8) call apply_anelastic_Q8_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_cQ) call apply_anelastic_cQ_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_fQ) call apply_anelastic_fQ_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
+               if (allocated(M%cq8_cg).or.allocated(M%fq8_cg)) &
+                    call apply_cg8_point_dispatch(F,M,G,x,y,z,Ux,Uy,Uz,DU)
+               if(allocated(M%cq_cg_t).or.allocated(M%fq_cg_t)) &
+                    call apply_cgt_point_dispatch(F,M,G,x,y,z,Ux,Uy,Uz,DU)
                if (M%anelastic_Qf) call apply_anelastic_Qf_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_const_Q_4M) call apply_const_Q_4M_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                  
@@ -1396,6 +1448,10 @@ if (F%order .eq. 7) then
                if (M%anelastic_Q8) call apply_anelastic_Q8_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_cQ) call apply_anelastic_cQ_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_fQ) call apply_anelastic_fQ_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
+               if (allocated(M%cq8_cg).or.allocated(M%fq8_cg)) &
+                    call apply_cg8_point_dispatch(F,M,G,x,y,z,Ux,Uy,Uz,DU)
+               if(allocated(M%cq_cg_t).or.allocated(M%fq_cg_t)) &
+                    call apply_cgt_point_dispatch(F,M,G,x,y,z,Ux,Uy,Uz,DU)
                if (M%anelastic_Qf) call apply_anelastic_Qf_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_const_Q_4M) call apply_const_Q_4M_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                  
@@ -1489,6 +1545,10 @@ if (F%order .eq. 7) then
                if (M%anelastic_Q8) call apply_anelastic_Q8_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_cQ) call apply_anelastic_cQ_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_fQ) call apply_anelastic_fQ_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
+               if (allocated(M%cq8_cg).or.allocated(M%fq8_cg)) &
+                    call apply_cg8_point_dispatch(F,M,G,x,y,z,Ux,Uy,Uz,DU)
+               if(allocated(M%cq_cg_t).or.allocated(M%fq_cg_t)) &
+                    call apply_cgt_point_dispatch(F,M,G,x,y,z,Ux,Uy,Uz,DU)
                if (M%anelastic_Qf) call apply_anelastic_Qf_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_const_Q_4M) call apply_const_Q_4M_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                  
@@ -1581,6 +1641,10 @@ if (F%order .eq. 7) then
                if (M%anelastic_Q8) call apply_anelastic_Q8_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_cQ) call apply_anelastic_cQ_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_fQ) call apply_anelastic_fQ_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
+               if (allocated(M%cq8_cg).or.allocated(M%fq8_cg)) &
+                    call apply_cg8_point_dispatch(F,M,G,x,y,z,Ux,Uy,Uz,DU)
+               if(allocated(M%cq_cg_t).or.allocated(M%fq_cg_t)) &
+                    call apply_cgt_point_dispatch(F,M,G,x,y,z,Ux,Uy,Uz,DU)
                if (M%anelastic_Qf) call apply_anelastic_Qf_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                if (M%anelastic_const_Q_4M) call apply_const_Q_4M_point_dispatch(F, M, G, x, y, z, Ux, Uy, Uz, DU)
                  
@@ -3021,6 +3085,46 @@ if (F%order .eq. 7) then
      end subroutine apply_anelastic_cQ_point_pml
 
 
+     subroutine apply_cg8_point_dispatch(B,M,G,x,y,z,Ux,Uy,Uz,DU)
+       use datatypes,only:block_type,block_material,block_grid_t
+       use anelastic_cg8_material,only:apply_cg8_strain
+       type(block_type),intent(in)::B
+       type(block_material),intent(inout)::M
+       type(block_grid_t),intent(in)::G
+       integer,intent(in)::x,y,z
+       real(wp),intent(in)::Ux(:),Uy(:),Uz(:)
+       real(wp),intent(inout)::DU(:)
+       real(wp)::dx,dy,dz,Qx(9),Qy(9),Qz(9),ex(3),ey(3),ez(3)
+       ex=Ux(1:3);ey=Uy(1:3);ez=Uz(1:3)
+       if(point_in_pml(B,G,x,y,z)) then
+         call pml_damping_and_q(B,G,x,y,z,dx,dy,dz,Qx,Qy,Qz)
+         ex=ex-dx*[Qx(4),Qx(7),Qx(8)]
+         ey=ey-dy*[Qy(7),Qy(5),Qy(9)]
+         ez=ez-dz*[Qz(8),Qz(9),Qz(6)]
+       endif
+       call apply_cg8_strain(M,x,y,z,ex,ey,ez,DU)
+     end subroutine
+
+     subroutine apply_cgt_point_dispatch(B,M,G,x,y,z,Ux,Uy,Uz,DU)
+       use datatypes,only:block_type,block_material,block_grid_t
+       use anelastic_cg_t_material,only:apply_cgt_strain
+       type(block_type),intent(in)::B
+       type(block_material),intent(inout)::M
+       type(block_grid_t),intent(in)::G
+       integer,intent(in)::x,y,z
+       real(wp),intent(in)::Ux(:),Uy(:),Uz(:)
+       real(wp),intent(inout)::DU(:)
+       real(wp)::dx,dy,dz,Qx(9),Qy(9),Qz(9),ex(3),ey(3),ez(3)
+       ex=Ux(1:3);ey=Uy(1:3);ez=Uz(1:3)
+       if(point_in_pml(B,G,x,y,z)) then
+         call pml_damping_and_q(B,G,x,y,z,dx,dy,dz,Qx,Qy,Qz)
+         ex=ex-dx*[Qx(4),Qx(7),Qx(8)]
+         ey=ey-dy*[Qy(7),Qy(5),Qy(9)]
+         ez=ez-dz*[Qz(8),Qz(9),Qz(6)]
+       endif
+       call apply_cgt_strain(M,x,y,z,ex,ey,ez,DU)
+     end subroutine
+
      subroutine apply_anelastic_fQ_point(M,x,y,z,Ux,Uy,Uz,DU)
           use common, only : wp
           use datatypes, only : block_material
@@ -3580,8 +3684,6 @@ if (F%order .eq. 7) then
           tr = Ux(1) + Uy(2) + Uz(3)
 
           do i = 1, 8
-               if (M%coarse_grained_Qf8 .and. i /= &
-                    1+mod(x-1,2)+2*mod(y-1,2)+4*mod(z-1,2)) cycle
                M%Deta4Qf8(x,y,z,i) = M%Deta4Qf8(x,y,z,i) + ( &
                     ( (M%strength_s_Qf8(i)*2.0_wp*M%M(x,y,z,2))*Ux(1) &
                     + ((M%M(x,y,z,1)+2.0_wp*M%M(x,y,z,2))*M%strength_p_Qf8(i) &
@@ -3646,8 +3748,6 @@ if (F%order .eq. 7) then
           DU(9) = DU(9) - sum(M%eta9Qf8(x,y,z,:))
 
           do i = 1, 8
-               if (M%coarse_grained_Qf8 .and. i /= &
-                    1+mod(x-1,2)+2*mod(y-1,2)+4*mod(z-1,2)) cycle
                M%Deta4Qf8(x,y,z,i) = M%Deta4Qf8(x,y,z,i) + ( &
                     ( (M%strength_s_Qf8(i)*2.0_wp*M%M(x,y,z,2))*exx &
                     + ((M%M(x,y,z,1)+2.0_wp*M%M(x,y,z,2))*M%strength_p_Qf8(i) &

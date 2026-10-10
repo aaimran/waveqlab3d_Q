@@ -1,0 +1,12 @@
+cgt_material_unit 2 0.874322
+cgt_coefficients_unit 3 1.27418
+cgt_material_mpi_2 3 0.20526
+cgt_material_mpi_4 3 0.320154
+cgt_material_mpi_8 3 0.461854
+cgt_single_cell_mpi_1 3 0.294945
+cgt_single_cell_mpi_2 3 0.216956
+cgt_single_cell_mpi_3 3 0.226423
+cgt_single_cell_mpi_4 3 0.204617
+cgt_single_cell_mpi_8 3 0.356691
+cQ_cgt_one_block 2 114.309
+---

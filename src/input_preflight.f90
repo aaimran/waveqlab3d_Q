@@ -12,6 +12,12 @@ module input_preflight
   use anelastic_cq_model, only : read_cq_parameters
   use anelastic_fq_model, only : read_fq_parameters
   use anelastic_fq8_model, only : read_fq8_parameters
+  use anelastic_cq8_cg_model, only: read_cq8_cg_parameters
+  use anelastic_fq8_cg_model, only: read_fq8_cg_parameters
+  use anelastic_cq_cg_t_model,only:read_cq_cg_t_parameters
+  use anelastic_fq_cg_t_model,only:read_fq_cg_t_parameters
+  use anelastic_cg8_model, only: cg8_parameters,cg8_times
+  use anelastic_cg8_layout, only: cg8_minimum_buffer
   use decomposition_safety, only : stencil_requirements_t, get_stencil_requirements, &
        topology_fits, select_single_block_topology
   implicit none
@@ -205,16 +211,88 @@ contains
                 end if
              end if
           end if
+          if(.not.issues%has_errors().and.(trim(response)=='anelastic-cQ8-cg'.or.trim(response)=='anelastic-fQ8-cg')) then
+            if(type_of_mesh/='cartesian'.or.use_topography) then
+              call issues%add(DIAG_ERROR,'CFG-CG8-002','CG8 requires a uniform Cartesian grid without topography.')
+            else if(CFL>0.25_wp) then
+              call issues%add(DIAG_ERROR,'CFG-CG8-006','CG8 currently validates CFL <= 0.25.')
+            else if(coupling/='locked') then
+              call issues%add(DIAG_ERROR,'CFG-CG8-005','CG8 currently supports locked interfaces only.')
+            else if(.not.((fd_type=='upwind'.and.(order==4.or.order==6)).or. &
+                         (fd_type=='upwind_drp'.and.order==6))) then
+              call issues%add(DIAG_ERROR,'CFG-CG8-003', &
+                   'CG8 validates upwind order=4/6 and upwind_drp order=6; centered traditional CG is unsupported.')
+            else
+              if(trim(response)=='anelastic-cQ8-cg') then
+                call read_cq8_cg_parameters(infile,nblocks,config%cq8_cg,stat,iomsg)
+                config%has_cq8_cg=stat==0
+              else
+                call read_fq8_cg_parameters(infile,nblocks,config%fq8_cg,stat,iomsg)
+                config%has_fq8_cg=stat==0
+              endif
+              if(stat/=0) call issues%add(DIAG_ERROR,'CFG-CG8-001',trim(iomsg))
+              if(stat==0) then
+                if(config%has_cq8_cg) then
+                  if(any(config%cq8_cg%settings%Qp0(1:nblocks)<config%cq8_cg%settings%Qs0(1:nblocks))) &
+                    call issues%add(DIAG_ERROR,'CFG-CG8-007','CG8 validated envelope currently requires Qp0 >= Qs0.')
+                  if(any(config%cq8_cg%settings%Qs0(1:nblocks)<400).or. &
+                     any(config%cq8_cg%settings%Qp0(1:nblocks)<400)) &
+                    call issues%add(DIAG_ERROR,'CFG-CG8-004','CG8 validated envelope currently requires Qs0/Qp0 >= 400.')
+                else
+                  if(any(config%fq8_cg%settings%Qp0(1:nblocks)<config%fq8_cg%settings%Qs0(1:nblocks))) &
+                    call issues%add(DIAG_ERROR,'CFG-CG8-007','CG8 validated envelope currently requires Qp0 >= Qs0.')
+                  if(any(config%fq8_cg%settings%Qs0(1:nblocks)<400).or. &
+                     any(config%fq8_cg%settings%Qp0(1:nblocks)<400)) &
+                    call issues%add(DIAG_ERROR,'CFG-CG8-004','CG8 validated envelope currently requires Qs0/Qp0 >= 400.')
+                endif
+              endif
+            endif
+          endif
+          if(.not.issues%has_errors().and.(trim(response)=='anelastic-cQ-cg-t'.or.trim(response)=='anelastic-fQ-cg-t')) then
+            if(type_of_mesh/='cartesian'.or.use_topography) then
+              call issues%add(DIAG_ERROR,'CFG-CGT-002','CG-T requires a uniform Cartesian grid without topography.')
+            else if(CFL>0.25_wp) then
+              call issues%add(DIAG_ERROR,'CFG-CGT-006','CG-T currently validates CFL <= 0.25.')
+            else if(coupling/='locked') then
+              call issues%add(DIAG_ERROR,'CFG-CGT-005','CG-T currently supports locked interfaces only.')
+            else if(order/=6.or.(fd_type/='traditional'.and.fd_type/='upwind'.and.fd_type/='upwind_drp')) then
+              call issues%add(DIAG_ERROR,'CFG-CGT-003','CG-T supports traditional/upwind/upwind_drp order=6 only.')
+            else
+              if(trim(response)=='anelastic-cQ-cg-t') then
+                call read_cq_cg_t_parameters(infile,nblocks,config%cq_cg_t,stat,iomsg)
+                config%has_cq_cg_t=stat==0
+              else
+                call read_fq_cg_t_parameters(infile,nblocks,config%fq_cg_t,stat,iomsg)
+                config%has_fq_cg_t=stat==0
+              endif
+              if(stat/=0) call issues%add(DIAG_ERROR,'CFG-CGT-001',trim(iomsg))
+              if(stat==0) then
+                if(config%has_cq_cg_t) then
+                  if(any(config%cq_cg_t%settings%Qp0(1:nblocks)<config%cq_cg_t%settings%Qs0(1:nblocks))) &
+                    call issues%add(DIAG_ERROR,'CFG-CGT-007','CG-T validated envelope currently requires Qp0 >= Qs0.')
+                  if(any(config%cq_cg_t%settings%Qs0(1:nblocks)<400).or. &
+                     any(config%cq_cg_t%settings%Qp0(1:nblocks)<400)) &
+                    call issues%add(DIAG_ERROR,'CFG-CGT-004','CG-T validated envelope currently requires Qs0/Qp0 >= 400.')
+                else
+                  if(any(config%fq_cg_t%settings%Qp0(1:nblocks)<config%fq_cg_t%settings%Qs0(1:nblocks))) &
+                    call issues%add(DIAG_ERROR,'CFG-CGT-007','CG-T validated envelope currently requires Qp0 >= Qs0.')
+                  if(any(config%fq_cg_t%settings%Qs0(1:nblocks)<400).or. &
+                     any(config%fq_cg_t%settings%Qp0(1:nblocks)<400)) &
+                    call issues%add(DIAG_ERROR,'CFG-CGT-004','CG-T validated envelope currently requires Qs0/Qp0 >= 400.')
+                endif
+              endif
+            endif
+          endif
           if (.not.issues%has_errors() .and. trim(adjustl(response)) == 'anelastic-fQ8') then
              call read_fq8_parameters(infile, config%fq8, stat, iomsg)
              if (stat /= 0) then
                 call issues%add(DIAG_ERROR, 'CFG-FQ8-001', trim(iomsg), &
                      section='anelastic_fQ8_list', &
-                     suggestion='Use coarse_grain=2 with coefficient_method=''withers-2015'', '// &
-                     'or use coarse_grain=0 with coefficient_method=''conventional-nnls''; '// &
+                     suggestion='Use conventional-nnls for full anelastic-fQ8, or the independent anelastic-fQ8-cg response; '// &
                      'also provide Qs0/Qp0 >= 15 and valid gamma/frequencies.')
              else
                 config%has_fq8 = .true.
+                if(len_trim(iomsg)>0) call issues%add(DIAG_WARNING,'CFG-FQ8-DEP-002',trim(iomsg))
              end if
           end if
 
@@ -428,6 +506,7 @@ contains
 
     type(simulation_config_t), intent(in) :: config
     integer :: i, nt, limiting_block
+    real(wp) :: cg_tau(8)
     real(wp) :: spacing(3), block_limit, elastic_limit, relaxation_limit
     real(wp) :: dt_limit, covered_time
     character(len=256) :: response
@@ -460,6 +539,14 @@ contains
        relaxation_limit = cq_relaxation_dt_limit(config%cq)
     case ('anelastic-fQ')
        relaxation_limit = fq_relaxation_dt_limit(config%fq)
+    case ('anelastic-cQ8-cg')
+       call cg8_times(config%cq8_cg%settings,cg_tau);relaxation_limit=2*minval(cg_tau)
+    case ('anelastic-fQ8-cg')
+       call cg8_times(config%fq8_cg%settings,cg_tau);relaxation_limit=2*minval(cg_tau)
+    case ('anelastic-cQ-cg-t')
+       call cg8_times(config%cq_cg_t%settings,cg_tau);relaxation_limit=2*minval(cg_tau)
+    case ('anelastic-fQ-cg-t')
+       call cg8_times(config%fq_cg_t%settings,cg_tau);relaxation_limit=2*minval(cg_tau)
     case ('anelastic-fQ8')
        relaxation_limit = fq8_relaxation_dt_limit(config%fq8)
     end select
@@ -511,7 +598,7 @@ contains
 
     select case (trim(adjustl(response)))
     case ('elastic','plastic','anelastic','low-pass','anelastic-Q','anelastic-Q4','anelastic-Q8', &
-          'anelastic-cQ8-b2','anelastic-cQ','anelastic-fQ', &
+          'anelastic-cQ8-b2','anelastic-cQ','anelastic-fQ','anelastic-cQ8-cg','anelastic-fQ8-cg','anelastic-cQ-cg-t','anelastic-fQ-cg-t', &
           'anelastic-Qf','anelastic-fQ8','constant-Q-4M','constant-Q-8M','frequency-Q-4M','frequency-Q-8M')
     case default
        call issues%add(DIAG_ERROR, 'CFG-PROBLEM-002', &
@@ -784,6 +871,14 @@ contains
     if (config%has_cq) call broadcast_cq(config)
     call MPI_Bcast(config%has_fq, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, ierr)
     if (config%has_fq) call broadcast_fq(config)
+    call MPI_Bcast(config%has_cq8_cg,1,MPI_LOGICAL,0,MPI_COMM_WORLD,ierr)
+    if(config%has_cq8_cg) call broadcast_cg8(config%cq8_cg%settings)
+    call MPI_Bcast(config%has_fq8_cg,1,MPI_LOGICAL,0,MPI_COMM_WORLD,ierr)
+    if(config%has_fq8_cg) call broadcast_cg8(config%fq8_cg%settings)
+    call MPI_Bcast(config%has_cq_cg_t,1,MPI_LOGICAL,0,MPI_COMM_WORLD,ierr)
+    if(config%has_cq_cg_t) call broadcast_cg8(config%cq_cg_t%settings)
+    call MPI_Bcast(config%has_fq_cg_t,1,MPI_LOGICAL,0,MPI_COMM_WORLD,ierr)
+    if(config%has_fq_cg_t) call broadcast_cg8(config%fq_cg_t%settings)
     call MPI_Bcast(config%has_fq8, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, ierr)
     if (config%has_fq8) call broadcast_fq8(config)
   end subroutine broadcast_config
@@ -889,12 +984,35 @@ contains
     call MPI_Bcast(config%fq%transition_upper_ratio,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
   end subroutine broadcast_fq
 
+  subroutine broadcast_cg8(p)
+    type(cg8_parameters),intent(inout)::p
+    integer::ierr
+    call MPI_Bcast(p%Qs0,2,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+    call MPI_Bcast(p%Qp0,2,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+    call MPI_Bcast(p%fref,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+    call MPI_Bcast(p%fmin,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+    call MPI_Bcast(p%fmax,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+    call MPI_Bcast(p%gamma,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+    call MPI_Bcast(p%f_transition,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+    call MPI_Bcast(p%transition_lower_ratio,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+    call MPI_Bcast(p%transition_upper_ratio,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+    call MPI_Bcast(p%fit_tolerance,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+    call MPI_Bcast(p%max_fit_error,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+    call MPI_Bcast(p%fit_samples,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+    call MPI_Bcast(p%fit_max_iterations,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+    call MPI_Bcast(p%buffer_layers,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+    call MPI_Bcast(p%pattern_origin,3,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+    call bcast_chars(p%transition_policy)
+    call bcast_chars(p%relaxation_policy)
+    call bcast_chars(p%coefficient_policy)
+    call bcast_chars(p%boundary_policy)
+  end subroutine
+
   subroutine broadcast_fq8(config)
     type(simulation_config_t), intent(inout) :: config
     integer :: ierr
     call bcast_chars(config%fq8%coefficient_method)
     call bcast_chars(config%fq8%weight_policy)
-    call MPI_Bcast(config%fq8%coarse_grain, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
     call MPI_Bcast(config%fq8%Qs0, 1, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
     call MPI_Bcast(config%fq8%Qp0, 1, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
     call MPI_Bcast(config%fq8%gamma, 1, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)

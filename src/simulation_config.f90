@@ -8,6 +8,10 @@ module simulation_config
   use anelastic_cq_model, only : cq_parameters
   use anelastic_fq_model, only : fq_parameters
   use anelastic_fq8_model, only : fq8_parameters
+  use anelastic_cq8_cg_model, only: cq8_cg_parameters
+  use anelastic_fq8_cg_model, only: fq8_cg_parameters
+  use anelastic_cq_cg_t_model,only:cq_cg_t_parameters
+  use anelastic_fq_cg_t_model,only:fq_cg_t_parameters
   implicit none
   private
 
@@ -43,6 +47,12 @@ module simulation_config
      type(cq_parameters) :: cq
      type(fq_parameters) :: fq
      type(fq8_parameters) :: fq8
+     type(cq8_cg_parameters) :: cq8_cg
+     type(fq8_cg_parameters) :: fq8_cg
+     type(cq_cg_t_parameters)::cq_cg_t
+     type(fq_cg_t_parameters)::fq_cg_t
+     logical::has_cq_cg_t=.false.,has_fq_cg_t=.false.
+     logical :: has_cq8_cg=.false.,has_fq8_cg=.false.
      logical :: has_q4 = .false.
      logical :: has_q8 = .false.
      logical :: has_cq8_b2 = .false.

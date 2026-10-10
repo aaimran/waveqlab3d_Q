@@ -36,7 +36,7 @@ when cross compiling. Other compilers can supply their precision options through
 `-DWQL3D_REAL8_FLAG="..."`. User-provided CMake optimization and debug flags are
 preserved.
 
-Supported attenuation response options currently include `anelastic`, `anelastic-Q`, `anelastic-Q8`, `anelastic-cQ8-b2`, `anelastic-cQ`, `anelastic-fQ`, `anelastic-fQ8`, `anelastic-Qf`, `constant-Q-4M`, `constant-Q-8M`, `frequency-Q-4M`, and `frequency-Q-8M`.
+Supported attenuation response options currently include `anelastic`, `anelastic-Q`, `anelastic-Q8`, `anelastic-cQ8-b2`, `anelastic-cQ`, `anelastic-cQ8-cg`, `anelastic-fQ8-cg`, `anelastic-fQ`, `anelastic-fQ8`, `anelastic-Qf`, `constant-Q-4M`, `constant-Q-8M`, `frequency-Q-4M`, and `frequency-Q-8M`.
 
 For the fixed eight-mechanism constant-Q response, prefer explicit P- and
 S-wave quality factors in anelastic_Q8_list:
@@ -195,6 +195,45 @@ The response supports the existing upwind, traditional, and upwind DRP paths,
 including the interior PML correction and MPI decomposition. A complete runnable
 example is `inputfile/test_anelastic_fQ_dynamic.in`.
 
+The independent eight-mechanism coarse responses are `anelastic-cQ8-cg` and
+`anelastic-fQ8-cg`, with `&anelastic_cQ8_cg_list` and `&anelastic_fQ8_cg_list`.
+Both use compact one-mechanism interior storage and independently fitted full
+buffers. The supported operators are upwind order 4 or 6 and upwind_drp order 6,
+with CFL <=0.25, uniform
+axis-aligned Cartesian material blocks, locked interfaces, Qs0/Qp0 >=400 with
+Qp0 >=Qs0, sqrt(3)<=Vp/Vs<=2, spacing aspect ratios >=0.5, and at least 16.1 points
+per shortest S wavelength in the fit band. Unsupported inputs fail explicitly.
+
+Traditional order 6 remains available in the full-memory responses. It is rejected
+for these nodal CG responses: the centered derivative leaves transverse period-two
+planes uncoupled for axis-aligned waves and fails the eight-mechanism wave-response
+gate. Supporting centered CG requires a separately validated memory-coupling scheme.
+Automatic full-buffer guards are 10 nodes for upwind 4, 12 for upwind 6, and 16
+for upwind_drp 6, plus PML thickness on the relevant faces. Order-6 examples are
+`inputfile/test_anelastic_cQ8_cg_upwind6.in`,
+`inputfile/test_anelastic_fQ8_cg_upwind6.in`, and their `upwind_drp6` counterparts.
+
+The new names fix N=8 and period two; there is no `coarse_grain` option. Supply
+one Q entry per active block. Common controls include `fmin/fmax/fref`,
+`relaxation_policy='band'` or `'withers-times'`, `fit_samples=256`,
+`fit_tolerance=1e-9`, `fit_max_iterations=500`, `max_fit_error=0.05` (maximum 0.05),
+`boundary_policy='full-buffer'`, `buffer_layers=-1` for automatic sizing, and
+`pattern_origin=1,1,1`. `coefficient_policy` is `constrained-effective-fit`.
+Frequency CG additionally accepts the existing fQ gamma/transition controls,
+including sharp/smooth targets. Some target/band combinations cannot satisfy the
+error bound and are rejected rather than silently adjusted.
+
+`anelastic-fQ8` and its deprecated alias are now always full-layout conventional
+NNLS. Old coarse inputs and raw Withers coefficient-method requests must migrate
+to the new response/configuration. Explicit `coarse_grain=0` is a deprecated
+ignored compatibility field. Published coefficients are not copied unchanged
+into the new effective-response fit.
+
+See [the CG8 validation report](docs/cg8-validation.md) for measured scientific
+checks, limitations, memory accounting, and commands. Runnable examples are
+`inputfile/test_anelastic_cQ8_cg_dynamic.in` and
+`inputfile/test_anelastic_fQ8_cg_dynamic.in`.
+
 Station output columns default to `t vx vy vz`. Their order can be changed in
 the `output_list` namelist; for example:
 
@@ -277,3 +316,42 @@ clearly delimited line ending in a semicolon, for example:
 
 `output_station_info` only controls the boxed configuration summary;
 `output_station_mapping` controls these individual station mapping lines.
+
+
+The independent projected-cell responses are `anelastic-cQ-cg-t` and
+`anelastic-fQ-cg-t`, configured with `&anelastic_cQ_cg_t_list` and
+`&anelastic_fQ_cg_t_list`. They support traditional, upwind, and upwind_drp
+spatial order 6. Each complete 2×2×2 node group shares all eight additive
+relaxation mechanisms, driven by the arithmetic mean of physical strain rate;
+the summed memory stress is returned to every node. This differs from the
+one-mechanism-per-node layout of the existing `anelastic-cQ8-cg` and `anelastic-fQ8-cg` responses.
+
+Initial support requires N=8, one or two uniform axis-aligned Cartesian material
+blocks, locked interfaces, CFL<=0.25, Qs0/Qp0>=400 with Qp0>=Qs0,
+sqrt(3)<=Vp/Vs<=2, spacing aspect ratios>=0.5, and at least 24.1 fine-grid
+points per shortest fitted S wavelength over the band. Full-memory buffers
+protect boundaries, interfaces, incomplete groups, and PML. Automatic guards
+are 12 nodes for traditional/upwind 6 and 16 for upwind_drp 6, plus PML thickness.
+Unsupported inputs fail explicitly; there is no full-only fallback.
+
+Common controls are Qs0/Qp0 per active block, fmin/fmax/fref,
+`n_mechanisms=8`, `coefficient_policy='additive-passive-fit'`,
+`relaxation_policy='band'` or `'withers-times'`, `fit_samples=256`,
+`fit_tolerance=1e-9`, `fit_max_iterations=500`, `max_fit_error=0.01`
+(hard maximum 0.02), `cell_origin=1,1,1`, `boundary_policy='full-buffer'`,
+and `buffer_layers=-1` for automatic sizing. Frequency-dependent response
+controls retain gamma and the sharp/smooth transition options. The fitting
+error is independently checked on a dense frequency grid and at transition
+edges. Eight mechanisms cannot fit every target to the default 1%; the supplied
+fQ examples explicitly request 2%, and failed fits remain errors.
+
+The raw interior attenuation memories and RK residuals use one-eighth of full
+storage. Cell-strain workspace, maps, MPI routes, full buffers, and other solver
+arrays reduce the total memory saving. Initialization prints these categories
+separately. The elastic stencil remains sixth order; the projected attenuation
+approximation must not be described as a sixth-order full scheme.
+
+Examples are `inputfile/test_anelastic_{cQ,fQ}_cg_t_{traditional,upwind,upwind_drp}6.in`
+and `inputfile/test_anelastic_{cQ,fQ}_cg_t_nb1.in`. The implementation/validation
+record is `docs/cg-t-validation.md`; the development plan is
+`cg-t-implementation-plan.md`.

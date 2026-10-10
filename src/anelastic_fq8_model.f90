@@ -1,7 +1,7 @@
 module anelastic_fq8_model
 
   use common, only : wp
-  use withers_tables, only : get_relaxation_times, get_withers_weights
+  use withers_tables, only : get_relaxation_times
   use, intrinsic :: ieee_arithmetic, only : ieee_is_finite
   implicit none
   private
@@ -12,7 +12,6 @@ module anelastic_fq8_model
   type, public :: fq8_parameters
      character(len=32) :: coefficient_method = 'conventional-nnls'
      character(len=32) :: weight_policy = 'table-exact'
-     integer :: coarse_grain = -1
      real(wp) :: Qs0 = -1.0_wp
      real(wp) :: Qp0 = -1.0_wp
      real(wp) :: gamma = -1.0_wp
@@ -42,7 +41,7 @@ contains
 
     coefficient_method=parameters%coefficient_method
     weight_policy=parameters%weight_policy
-    coarse_grain=parameters%coarse_grain
+    coarse_grain=-1 ! Parser-only compatibility for old explicit full-layout inputs.
     Qs0=parameters%Qs0; Qp0=parameters%Qp0; gamma=parameters%gamma
     f_transition=parameters%f_transition; fref=parameters%fref
     status=0; message=''
@@ -55,40 +54,20 @@ contains
     end if
     coefficient_method=trim(adjustl(coefficient_method))
     weight_policy=trim(adjustl(weight_policy))
-    if (coefficient_method /= 'withers-2015' .and. &
-        coefficient_method /= 'conventional-nnls') then
+    if(coarse_grain /= -1.and.coarse_grain /= 0) then
        status=1
-       message='anelastic-fQ8 coefficient_method must be conventional-nnls or withers-2015'
+       message='Coarse graining moved to response anelastic-fQ8-cg with &anelastic_fQ8_cg_list'
        return
-    end if
-    if (weight_policy /= 'table-exact' .and. weight_policy /= 'nonnegative-refit') then
+    endif
+    if(coefficient_method /= 'conventional-nnls') then
        status=1
-       message='anelastic-fQ8 weight_policy must be table-exact or nonnegative-refit'
+       message='anelastic-fQ8 is full-layout only; use anelastic-fQ8-cg for coarse-grained attenuation'
        return
-    end if
-    if (coefficient_method /= 'withers-2015' .and. weight_policy /= 'table-exact') then
-       status=1
-       message='anelastic-fQ8 nonnegative-refit applies only to coefficient_method=withers-2015'
+    endif
+    if(weight_policy /= 'table-exact') then
+       status=1; message='anelastic-fQ8 no longer supports coarse weight policies; use anelastic-fQ8-cg'
        return
-    end if
-    if (coarse_grain == -1) then
-       if (coefficient_method == 'withers-2015') then
-          coarse_grain=2
-       else
-          coarse_grain=0
-       end if
-    end if
-    if (coarse_grain /= 0 .and. coarse_grain /= 2) then
-       status=1
-       message='anelastic-fQ8 coarse_grain must be 0 or 2'
-       return
-    end if
-    if (coarse_grain == 0 .and. coefficient_method == 'withers-2015') then
-       status=1
-       message='anelastic-fQ8 coarse_grain=0 requires coefficient_method=conventional-nnls; '// &
-            'raw withers-2015 strengths are for the 2x2x2 coarse layout'
-       return
-    end if
+    endif
     if (.not.ieee_is_finite(Qs0) .or. .not.ieee_is_finite(Qp0) .or. &
         Qs0 < fq8_minimum_q .or. Qp0 < fq8_minimum_q) then
        status=1; message='anelastic-fQ8 requires finite Qs0 and Qp0 >= 15'; return
@@ -104,9 +83,9 @@ contains
     end if
     parameters%coefficient_method=coefficient_method
     parameters%weight_policy=weight_policy
-    parameters%coarse_grain=coarse_grain
     parameters%Qs0=Qs0; parameters%Qp0=Qp0; parameters%gamma=gamma
     parameters%f_transition=f_transition; parameters%fref=fref
+    if(coarse_grain==0) message='Deprecated coarse_grain=0 is ignored; anelastic-fQ8 is always full-layout'
   end subroutine read_fq8_parameters
 
   subroutine build_fq8_coefficients(parameters,tau,strength_s,strength_p,status,message)
@@ -115,31 +94,13 @@ contains
          strength_p(fq8_nmechanisms)
     integer, intent(out) :: status
     character(len=*), intent(out) :: message
-    if (parameters%coarse_grain == 0 .and. parameters%coefficient_method == 'withers-2015') then
-       status=1
-       message='anelastic-fQ8 coarse_grain=0 requires coefficient_method=conventional-nnls; '// &
-            'raw withers-2015 strengths are for the 2x2x2 coarse layout'
-       return
-    end if
+    if(parameters%coefficient_method /= 'conventional-nnls') then
+       status=1;message='anelastic-fQ8 is full-layout only; use anelastic-fQ8-cg';return
+    endif
     call get_relaxation_times(parameters%gamma,tau)
     tau=tau/parameters%f_transition
-    if (parameters%coefficient_method == 'conventional-nnls') then
-       call fit_conventional_strengths(parameters%Qs0,parameters%gamma, &
-            parameters%f_transition,tau,strength_s)
-       call fit_conventional_strengths(parameters%Qp0,parameters%gamma, &
-            parameters%f_transition,tau,strength_p)
-    else
-       call get_withers_weights(parameters%gamma,parameters%Qs0,strength_s)
-       call get_withers_weights(parameters%gamma,parameters%Qp0,strength_p)
-       ! Published weights are w_k=N*lambda_k and are used directly with one
-       ! mechanism per node in the deterministic period-two coarse layout.
-       if (parameters%weight_policy == 'nonnegative-refit') then
-          call refit_nonnegative_at_reference(parameters%fref,tau,strength_s,status,message)
-          if (status /= 0) return
-          call refit_nonnegative_at_reference(parameters%fref,tau,strength_p,status,message)
-          if (status /= 0) return
-       end if
-    end if
+    call fit_conventional_strengths(parameters%Qs0,parameters%gamma,parameters%f_transition,tau,strength_s)
+    call fit_conventional_strengths(parameters%Qp0,parameters%gamma,parameters%f_transition,tau,strength_p)
     status=0; message=''
     if (.not.all(ieee_is_finite(tau)) .or. any(tau <= 0.0_wp) .or. &
         .not.all(ieee_is_finite(strength_s)) .or. &
@@ -150,39 +111,6 @@ contains
        status=1; message='anelastic-fQ8 coefficients leave a non-positive relaxed modulus'; return
     end if
   end subroutine build_fq8_coefficients
-
-  pure subroutine refit_nonnegative_at_reference(fref,tau,strength,status,message)
-    real(wp), intent(in) :: fref,tau(fq8_nmechanisms)
-    real(wp), intent(inout) :: strength(fq8_nmechanisms)
-    integer, intent(out) :: status
-    character(len=*), intent(out) :: message
-    real(wp) :: raw(fq8_nmechanisms),target_q,lo,hi,mid,qmid,max_factor
-    integer :: iteration
-
-    status=0; message=''
-    if (all(strength >= 0.0_wp)) return
-    raw=strength
-    target_q=fq8_effective_q(fref,tau,raw)
-    strength=max(strength,0.0_wp)
-    if (sum(strength) <= tiny(1.0_wp)) then
-       status=1; message='nonnegative-refit has no positive strengths to rescale'; return
-    end if
-    max_factor=(1.0_wp-100.0_wp*epsilon(1.0_wp))/sum(strength)
-    lo=0.0_wp; hi=min(2.0_wp,max_factor)
-    if (fq8_effective_q(fref,tau,hi*strength) > target_q) then
-       status=1; message='nonnegative-refit cannot bracket reference effective Q'; return
-    end if
-    do iteration=1,100
-       mid=0.5_wp*(lo+hi)
-       qmid=fq8_effective_q(fref,tau,mid*strength)
-       if (qmid > target_q) then
-          lo=mid
-       else
-          hi=mid
-       end if
-    end do
-    strength=0.5_wp*(lo+hi)*strength
-  end subroutine refit_nonnegative_at_reference
 
   pure subroutine fit_conventional_strengths(q0,gamma,f_transition,tau,strength)
     real(wp), intent(in) :: q0,gamma,f_transition,tau(fq8_nmechanisms)
@@ -240,6 +168,7 @@ contains
     end if
   end function fq8_realized_q
 
+  ! Pure coarse-cell diagnostics retained for table/reference tests; never a runtime fQ8 mode.
   pure complex(wp) function fq8_harmonic_response(frequency,tau,strength) result(response)
     real(wp), intent(in) :: frequency, tau(:), strength(:)
     real(wp), parameter :: pi=3.141592653589793_wp

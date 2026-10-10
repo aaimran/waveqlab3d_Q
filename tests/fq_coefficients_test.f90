@@ -52,7 +52,7 @@ program fq_coefficients_test
      enddo
   enddo
   ! Match the existing conventional full-layout fQ8 times and fitting band.
-  legacy%coefficient_method='conventional-nnls'; legacy%coarse_grain=0
+  legacy%coefficient_method='conventional-nnls'
   legacy%Qs0=50.0_wp; legacy%Qp0=80.0_wp; legacy%gamma=0.6_wp
   legacy%f_transition=1.0_wp; legacy%fref=1.0_wp
   call build_fq8_coefficients(legacy,lt,ls,lp,status,message)

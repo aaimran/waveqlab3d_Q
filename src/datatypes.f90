@@ -7,6 +7,8 @@
 module datatypes
 
    use common, only : wp
+   use anelastic_cg8_types, only : cg8_state
+   use anelastic_cg_t_types, only : cgt_state
    use mpi3dcomm, only : cartesian3d_t
    use mpi3d_interface, only : interface3d
    use mpi3dio, only : file_distributed
@@ -35,6 +37,8 @@ module datatypes
    type :: block_material
       real(kind = wp),dimension(:,:,:,:), allocatable :: M !< material properties
 
+      type(cg8_state),allocatable :: cq8_cg,fq8_cg
+      type(cgt_state),allocatable :: cq_cg_t,fq_cg_t
       ! --- Anelastic (Q) / attenuation state (used only when response == 'anelastic')
       logical :: anelastic = .false.
       real(kind = wp) :: dt = 0.0_wp
@@ -152,7 +156,6 @@ module datatypes
 
       ! --- frequency-dependent Q: canonical response anelastic-fQ8 (8 mechanisms)
       logical :: anelastic_Qf8 = .false.
-      logical :: coarse_grained_Qf8 = .false.
       integer :: n_mechanism_Qf8 = 8
       real(kind = wp) :: fref_Qf8 = 1.0_wp
       real(kind = wp) :: gamma_Qf8 = 0.0_wp

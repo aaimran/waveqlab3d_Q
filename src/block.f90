@@ -30,7 +30,7 @@ module block
  
      subroutine init_block(mesh_source, type_of_mesh,material_source,response,fd_type, order_fd, interpol, &
        use_topography, topo, B, problem, btp, block_comm,infile,id,ny,nz,q4_config,q8_config,cq_config,fq_config, &
-       fq8_config,process_dims,debug)
+       fq8_config,cq8_cg_config,fq8_cg_config,cqt_config,fqt_config,process_dims,debug)
  
      !> @brief initialize a block
  
@@ -53,6 +53,9 @@ module block
      use anelastic_cq_material, only : init_anelastic_cq_properties
      use anelastic_fq_material, only : init_anelastic_fq_properties
      use anelastic_fq8_model, only : fq8_parameters
+     use anelastic_cg8_model, only: cg8_parameters
+     use anelastic_cg8_material, only: init_cg8_properties
+     use anelastic_cg_t_material,only:init_cgt_properties
      use decomposition_safety, only : stencil_requirements_t, get_stencil_requirements
      implicit none
  
@@ -64,6 +67,7 @@ module block
      type(cq_parameters), intent(in) :: cq_config
      type(fq_parameters), intent(in) :: fq_config
      type(fq8_parameters), intent(in) :: fq8_config
+     type(cg8_parameters), intent(in) :: cq8_cg_config,fq8_cg_config,cqt_config,fqt_config
      type(block_type),intent(out) :: B
      integer, intent(in) :: block_comm,infile
      logical, intent(in) :: interpol, use_topography
@@ -163,6 +167,16 @@ module block
       else
         B%M%anelastic_Q8 = .false.
       end if
+
+      if(trim(response)=='anelastic-cQ8-cg') call init_cg8_properties(B%M,B%G,cq8_cg_config,id,.false., &
+           fd_type,order_fd,btp%pml_lqrs,btp%pml_rqrs,btp%npml)
+      if(trim(response)=='anelastic-fQ8-cg') call init_cg8_properties(B%M,B%G,fq8_cg_config,id,.true., &
+           fd_type,order_fd,btp%pml_lqrs,btp%pml_rqrs,btp%npml)
+
+      if(trim(response)=='anelastic-cQ-cg-t') call init_cgt_properties(B%M,B%G,cqt_config,id,.false., &
+           fd_type,order_fd,btp%pml_lqrs,btp%pml_rqrs,btp%npml)
+      if(trim(response)=='anelastic-fQ-cg-t') call init_cgt_properties(B%M,B%G,fqt_config,id,.true., &
+           fd_type,order_fd,btp%pml_lqrs,btp%pml_rqrs,btp%npml)
 
       if (trim(response) == 'anelastic-cQ') then
         call init_anelastic_cq_properties(B%M,B%G,cq_config,id)
@@ -403,6 +417,7 @@ module block
      !> @brief set rates using PDE
  
      use elastic, only : set_rates_elastic
+     use anelastic_cg_t_material,only:begin_cgt_stage,finish_cgt_stage
  
      implicit none
  
@@ -417,7 +432,10 @@ module block
         stop 'invalid block physics in set_rates_block'
      case('elastic')
         ! arguments are representative of actual case
+        call begin_cgt_stage(B%M)
         call set_rates_elastic(B, B%G, B%M, type_of_mesh)
+        if(allocated(B%M%cq_cg_t).or.allocated(B%M%fq_cg_t)) &
+          call finish_cgt_stage(B%M,B%F%DF(B%G%C%mq:B%G%C%pq,B%G%C%mr:B%G%C%pr,B%G%C%ms:B%G%C%ps,:))
      case('acoustic')
         stop 'acoustic physics not yet implemented in set_rates_block'
      end select

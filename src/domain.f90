@@ -48,6 +48,7 @@ contains
     use anelastic_cq_model, only : cq_relaxation_dt_limit
     use anelastic_fq_model, only : fq_relaxation_dt_limit
     use anelastic_fq8_model, only : fq8_relaxation_dt_limit
+    use anelastic_cg8_model, only: cg8_times
 
     implicit none
 
@@ -72,7 +73,7 @@ contains
     integer :: nt, nblocks
     logical :: output_fault_topo, w_fault, interpol, use_topography, mollify_source
     integer :: w_stride, ny, nz, order
-    real(kind = wp) :: CFL, t_final, topo
+    real(kind = wp) :: CFL, t_final, topo,cg_tau(8),cg_rho,cg_cs,cg_cp
     ! interface conditions
     character(64) :: coupling !< locked, slip-weakening_friction, linear_friction
     character(64) :: mesh_source, type_of_mesh, material_source !< cartesian or curvilinear
@@ -180,6 +181,14 @@ contains
      else if (trim(response_norm) == 'anelastic-fQ') then
        relaxation_dt_limit = fq_relaxation_dt_limit(config%fq)
        dtmin = min(dtmin, relaxation_dt_limit)
+     else if(trim(response_norm)=='anelastic-cQ8-cg'.or.trim(response_norm)=='anelastic-fQ8-cg') then
+       if(trim(response_norm)=='anelastic-cQ8-cg') call cg8_times(config%cq8_cg%settings,cg_tau)
+       if(trim(response_norm)=='anelastic-fQ8-cg') call cg8_times(config%fq8_cg%settings,cg_tau)
+       relaxation_dt_limit=2*minval(cg_tau);dtmin=min(dtmin,relaxation_dt_limit)
+     else if(trim(response_norm)=='anelastic-cQ-cg-t'.or.trim(response_norm)=='anelastic-fQ-cg-t') then
+       if(trim(response_norm)=='anelastic-cQ-cg-t') call cg8_times(config%cq_cg_t%settings,cg_tau)
+       if(trim(response_norm)=='anelastic-fQ-cg-t') call cg8_times(config%fq_cg_t%settings,cg_tau)
+       relaxation_dt_limit=2*minval(cg_tau);dtmin=min(dtmin,relaxation_dt_limit)
      else if (trim(response_norm) == 'anelastic-fQ8') then
        relaxation_dt_limit = fq8_relaxation_dt_limit(config%fq8)
        dtmin = min(dtmin, relaxation_dt_limit)
@@ -236,8 +245,17 @@ contains
       call init_block(D%mesh_source, D%type_of_mesh, D%material_source,&
            D%response, D%fd_type,  D%order, D%interpol, D%use_topography, topo, D%B(i), &
          problem, btp(i), block_comms(i),infile,i, ny, nz, config%q4, selected_q8, config%cq, config%fq, config%fq8, &
+         config%cq8_cg%settings,config%fq8_cg%settings,config%cq_cg_t%settings,config%fq_cg_t%settings, &
          config%process_dims(i,:), D%debug)
 
+      if(allocated(D%B(i)%M%cq8_cg).or.allocated(D%B(i)%M%fq8_cg).or. &
+         allocated(D%B(i)%M%cq_cg_t).or.allocated(D%B(i)%M%fq_cg_t)) then
+        cg_rho=minval(D%B(i)%M%M(:,:,:,3))
+        cg_cs=sqrt(maxval(D%B(i)%M%M(:,:,:,2))/cg_rho)
+        cg_cp=sqrt(maxval(D%B(i)%M%M(:,:,:,1)+2*D%B(i)%M%M(:,:,:,2))/cg_rho)
+        spat=(btp(i)%bqrs-btp(i)%aqrs)/real(btp(i)%nqrs-1,wp)
+        dtmin=min(dtmin,block_time_step(spat,CFL,[cg_rho,cg_cs,cg_cp]))
+      endif
       cart_size = [D%B(i)%G%C%size_q,D%B(i)%G%C%size_r,D%B(i)%G%C%size_s]
       coord = D%B(i)%G%C%coord
 
@@ -245,6 +263,11 @@ contains
     end do
 
 
+    if(trim(response_norm)=='anelastic-cQ8-cg'.or.trim(response_norm)=='anelastic-fQ8-cg'.or. &
+       trim(response_norm)=='anelastic-cQ-cg-t'.or.trim(response_norm)=='anelastic-fQ-cg-t') then
+      call MPI_Allreduce(dtmin,D%dt,1,MPI_DOUBLE_PRECISION,MPI_MIN,MPI_COMM_WORLD,ierr)
+      dtmin=D%dt
+    endif
     D%nt = floor(D%t_final/dtmin)
    
     if (is_master()) then
@@ -440,25 +463,39 @@ contains
          destroy_anelastic_Qf8_properties
     use anelastic_cq_material, only : destroy_anelastic_cq_properties
     use anelastic_fq_material, only : destroy_anelastic_fq_properties
+    use anelastic_cg8_material, only: destroy_cg8_properties,cg8_stats
+    use anelastic_cg_t_material,only:destroy_cgt_properties,cgt_stats
     use diagnostics, only : fatal_local
     use mpi3dbasic, only : rank
     use, intrinsic :: ieee_arithmetic, only : ieee_is_finite
 
     type(domain_type),intent(inout) :: D
-    real(wp) :: local_eta, global_eta, local_field, global_field
+    real(wp) :: local_eta, global_eta, local_field, global_field,cg_eta
     integer :: i, ierr
-    logical :: local_finite, global_finite
+    logical :: local_finite, global_finite,cg_finite
 
     if (trim(D%response) == 'anelastic-Q4' .or. trim(D%response) == 'anelastic-Q8' .or. &
         trim(D%response) == 'anelastic-cQ8-b2' .or. &
         trim(D%response) == 'anelastic-cQ' .or. trim(D%response) == 'anelastic-fQ' .or. &
-        trim(D%response) == 'anelastic-fQ8') then
+        trim(D%response) == 'anelastic-fQ8'.or.trim(D%response)=='anelastic-cQ8-cg'.or. &
+        trim(D%response)=='anelastic-fQ8-cg'.or.trim(D%response)=='anelastic-cQ-cg-t'.or. &
+        trim(D%response)=='anelastic-fQ-cg-t') then
        local_eta = 0.0_wp
        local_field = 0.0_wp
        local_finite = .true.
        do i = 1, D%nblocks
           if (.not.allocated(D%B(i)%F%F)) cycle
           local_field = max(local_field, maxval(abs(D%B(i)%F%F)))
+          if(allocated(D%B(i)%M%cq8_cg).or.allocated(D%B(i)%M%fq8_cg)) then
+            call cg8_stats(D%B(i)%M,cg_eta,cg_finite)
+            local_eta=max(local_eta,cg_eta)
+            local_finite=local_finite.and.cg_finite.and.all(ieee_is_finite(D%B(i)%F%F))
+          endif
+          if(allocated(D%B(i)%M%cq_cg_t).or.allocated(D%B(i)%M%fq_cg_t)) then
+            call cgt_stats(D%B(i)%M,cg_eta,cg_finite)
+            local_eta=max(local_eta,cg_eta)
+            local_finite=local_finite.and.cg_finite.and.all(ieee_is_finite(D%B(i)%F%F))
+          endif
           if (trim(D%response) == 'anelastic-Q4' .and. allocated(D%B(i)%M%eta4Q)) then
              local_eta = max(local_eta, maxval(abs(D%B(i)%M%eta4Q)), &
                   maxval(abs(D%B(i)%M%eta5Q)), maxval(abs(D%B(i)%M%eta6Q)), &
@@ -503,6 +540,16 @@ contains
             MPI_COMM_WORLD, ierr)
        call MPI_Allreduce(local_finite, global_finite, 1, MPI_LOGICAL, MPI_LAND, &
             MPI_COMM_WORLD, ierr)
+       if(trim(D%response)=='anelastic-cQ8-cg'.or.trim(D%response)=='anelastic-fQ8-cg') then
+         if(.not.global_finite) call fatal_local('RUN-CG8-001','Non-finite CG8 state','close_domain')
+         if(rank==0) write(*,'(A,ES12.4,A,ES12.4)') &
+           'CG8 final state: max|field|=',global_field,', max|memory|=',global_eta
+       endif
+       if(trim(D%response)=='anelastic-cQ-cg-t'.or.trim(D%response)=='anelastic-fQ-cg-t') then
+         if(.not.global_finite) call fatal_local('RUN-CGT-001','Non-finite CG-T state','close_domain')
+         if(rank==0) write(*,'(A,ES12.4,A,ES12.4)') &
+           'CG-T final state: max|field|=',global_field,', max|memory|=',global_eta
+       endif
        if (.not.global_finite .and. trim(D%response) == 'anelastic-Q4') &
             call fatal_local('RUN-Q4-001', &
             'Non-finite Q4 field or memory state detected at shutdown.', 'close_domain')
@@ -558,6 +605,8 @@ contains
        if (D%B(i)%M%anelastic_Q8) call destroy_anelastic_Q8_properties(D%B(i)%M)
        if (D%B(i)%M%anelastic_cQ) call destroy_anelastic_cq_properties(D%B(i)%M)
        if (D%B(i)%M%anelastic_fQ) call destroy_anelastic_fq_properties(D%B(i)%M)
+       call destroy_cg8_properties(D%B(i)%M)
+       call destroy_cgt_properties(D%B(i)%M)
        if (D%B(i)%M%anelastic_Qf8) call destroy_anelastic_Qf8_properties(D%B(i)%M)
     end do
 

@@ -1,0 +1,97 @@
+
+# Consider dependencies only in project.
+set(CMAKE_DEPENDS_IN_PROJECT_ONLY OFF)
+
+# The set of languages for which implicit dependencies are needed:
+set(CMAKE_DEPENDS_LANGUAGES
+  "Fortran"
+  )
+# The set of files for implicit dependencies of each language:
+set(CMAKE_DEPENDS_CHECK_Fortran
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/BoundaryConditions.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/BoundaryConditions.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/CouplingForcing.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/CouplingForcing.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/Interface_Condition.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/Interface_Condition.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/JU_xJU_yJU_z6.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/JU_xJU_yJU_z6.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/RHS_Interior.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/RHS_Interior.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/anelastic_cg8_layout.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/anelastic_cg8_layout.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/anelastic_cg8_material.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/anelastic_cg8_material.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/anelastic_cg8_model.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/anelastic_cg8_model.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/anelastic_cg8_types.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/anelastic_cg8_types.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/anelastic_cg_t_comm.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/anelastic_cg_t_comm.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/anelastic_cg_t_material.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/anelastic_cg_t_material.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/anelastic_cg_t_model.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/anelastic_cg_t_model.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/anelastic_cg_t_types.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/anelastic_cg_t_types.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/anelastic_cq8_b2_model.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/anelastic_cq8_b2_model.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/anelastic_cq8_cg_model.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/anelastic_cq8_cg_model.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/anelastic_cq_cg_t_model.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/anelastic_cq_cg_t_model.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/anelastic_cq_material.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/anelastic_cq_material.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/anelastic_cq_model.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/anelastic_cq_model.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/anelastic_fq8_cg_model.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/anelastic_fq8_cg_model.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/anelastic_fq8_model.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/anelastic_fq8_model.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/anelastic_fq_cg_t_model.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/anelastic_fq_cg_t_model.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/anelastic_fq_material.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/anelastic_fq_material.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/anelastic_fq_model.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/anelastic_fq_model.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/anelastic_q4_model.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/anelastic_q4_model.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/anelastic_q8_model.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/anelastic_q8_model.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/block.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/block.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/boundary.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/boundary.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/common.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/common.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/datatypes.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/datatypes.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/decomposition_safety.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/decomposition_safety.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/diagnostics.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/diagnostics.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/domain.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/domain.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/elastic.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/elastic.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/fault_output.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/fault_output.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/fault_receiver_output.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/fault_receiver_output.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/fields.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/fields.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/grid.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/grid.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/iface.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/iface.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/initial_stress_condition.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/initial_stress_condition.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/input_preflight.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/input_preflight.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/inter_material.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/inter_material.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/main.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/main.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/material.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/material.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/metrics.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/metrics.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/mms.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/mms.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/moment_tensor.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/moment_tensor.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/mpi3d_interface.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/mpi3d_interface.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/mpi3dbasic.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/mpi3dbasic.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/mpi3dcomm.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/mpi3dcomm.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/mpi3dio.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/mpi3dio.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/parallel_write.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/parallel_write.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/plane_output.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/plane_output.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/plastic.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/plastic.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/plastic_material.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/plastic_material.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/pml.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/pml.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/seismogram.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/seismogram.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/simulation_config.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/simulation_config.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/slice_output.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/slice_output.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/time_step.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/time_step.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/unit_normals.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/unit_normals.f90.o"
+  "/Users/aimran/Documents/Code Development/waveqlab3d_Q/src/withers_tables.f90" "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/CMakeFiles/waveqlab3d.dir/withers_tables.f90.o"
+  )
+set(CMAKE_Fortran_COMPILER_ID "GNU")
+set(CMAKE_Fortran_SUBMODULE_SEP "@")
+set(CMAKE_Fortran_SUBMODULE_EXT ".smod")
+
+# The include file search paths:
+set(CMAKE_Fortran_TARGET_INCLUDE_PATH
+  "waveqlab3d_modules"
+  "/opt/homebrew/Cellar/open-mpi/5.0.11/include"
+  "/opt/homebrew/Cellar/open-mpi/5.0.11/lib"
+  )
+
+# The set of dependency files which are needed:
+set(CMAKE_DEPENDS_DEPENDENCY_FILES
+  )
+
+# Targets to which this target links which contain Fortran sources.
+set(CMAKE_Fortran_TARGET_LINKED_INFO_FILES
+  )
+
+# Targets to which this target links which contain Fortran sources.
+set(CMAKE_Fortran_TARGET_FORWARD_LINKED_INFO_FILES
+  )
+
+# Fortran module output directory.
+set(CMAKE_Fortran_TARGET_MODULE_DIR "/Users/aimran/Documents/Code Development/waveqlab3d_Q/build-cgt-debug/waveqlab3d_modules")

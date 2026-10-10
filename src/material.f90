@@ -8,8 +8,7 @@ module material
        read_q4_parameters, build_q4_fixed_coefficients, q4_max_relative_error
   use anelastic_q8_model, only : q8_parameters, q8_nmechanisms, &
        read_q8_parameters, build_q8_fixed_coefficients, q8_max_relative_error
-  use anelastic_fq8_model, only : fq8_max_relative_error, fq8_effective_q, &
-       fq8_common_modulus_scale, fq8_phase_velocity_ratio
+  use anelastic_fq8_model, only : fq8_max_relative_error
   implicit none
 
   logical, save :: q4_summary_printed = .false.
@@ -1834,16 +1833,12 @@ contains
          real(kind = wp) :: wref
          real(kind = wp) :: val_S, val_P, denom_S, denom_P, vs, vp, mu_unrelax_S, mu_unrelax_P
          real(kind = wp) :: max_qs_error, max_qp_error
-         real(kind = wp) :: common_scale_s, common_scale_p
-         real(kind = wp) :: sample_frequencies(7), qeff_s, qeff_p, &
-              velocity_ratio_s, velocity_ratio_p
-         integer :: stat, i, l, j, k, N, sample
+         integer :: stat, i, l, j, k, N
          character(len=256) :: message
          real(kind = wp), parameter :: pi = 3.141592653589793_wp
 
          M%anelastic_Qf8 = .true.
          M%anelastic_Qf = .true.
-         M%coarse_grained_Qf8 = parameters%coarse_grain == 2
          N = 8
          M%n_mechanism_Qf8 = N
          M%gamma_Qf8 = parameters%gamma
@@ -1889,8 +1884,6 @@ contains
             write(*,'(A)') trim(message)
             error stop 1
          end if
-         common_scale_s=fq8_common_modulus_scale(parameters%fref,M%tau_Qf8,M%strength_s_Qf8)
-         common_scale_p=fq8_common_modulus_scale(parameters%fref,M%tau_Qf8,M%strength_p_Qf8)
 
          wref = 2.0_wp * pi * parameters%fref
          do i = G%C%mq, G%C%pq
@@ -1898,24 +1891,17 @@ contains
                do k = G%C%ms, G%C%ps
                   val_S = 0.0_wp
                   val_P = 0.0_wp
-                  if (.not.M%coarse_grained_Qf8) then
                      do l = 1, N
                         denom_S = wref**2 * M%tau_Qf8(l)**2 + 1.0_wp
                         denom_P = denom_S
                         val_S = val_S + M%strength_s_Qf8(l) / denom_S
                         val_P = val_P + M%strength_p_Qf8(l) / denom_P
                      end do
-                  end if
 
                   vs = sqrt(M%M(i,j,k,2) / M%M(i,j,k,3))
                   vp = sqrt((M%M(i,j,k,1) + 2.0_wp*M%M(i,j,k,2)) / M%M(i,j,k,3))
-                  if (M%coarse_grained_Qf8) then
-                     mu_unrelax_S=M%M(i,j,k,3)*vs**2*common_scale_s
-                     mu_unrelax_P=M%M(i,j,k,3)*vp**2*common_scale_p
-                  else
-                     mu_unrelax_S=M%M(i,j,k,3)*vs**2/(1.0_wp-val_S)
-                     mu_unrelax_P=M%M(i,j,k,3)*vp**2/(1.0_wp-val_P)
-                  end if
+                  mu_unrelax_S=M%M(i,j,k,3)*vs**2/(1.0_wp-val_S)
+                  mu_unrelax_P=M%M(i,j,k,3)*vp**2/(1.0_wp-val_P)
                   vs = sqrt(mu_unrelax_S / M%M(i,j,k,3))
                   vp = sqrt(mu_unrelax_P / M%M(i,j,k,3))
 
@@ -1936,50 +1922,20 @@ contains
             write(*,'(A)') 'anelastic-fQ8 parameters:'
             write(*,'(A,A)') '  coefficient method = ',trim(parameters%coefficient_method)
             write(*,'(A,A)') '  weight policy = ',trim(parameters%weight_policy)
-            write(*,'(A,I0)') '  coarse_grain = ',parameters%coarse_grain
             write(*,'(A,ES12.4,A,ES12.4)') '  Qs0 = ',parameters%Qs0,', Qp0 = ',parameters%Qp0
             write(*,'(A,F5.2,A,ES12.4)') '  gamma = ',parameters%gamma, &
                  ', transition frequency (Hz) = ',parameters%f_transition
             write(*,'(A,8(ES11.3,1X))') '  tau (s) = ',M%tau_Qf8
             write(*,'(A,8(ES11.3,1X))') '  S strengths = ',M%strength_s_Qf8
             write(*,'(A,8(ES11.3,1X))') '  P strengths = ',M%strength_p_Qf8
-            if (any(M%strength_s_Qf8 < 0.0_wp) .or. any(M%strength_p_Qf8 < 0.0_wp)) &
-                 call warn_once('FQ8-WEIGHT-001', &
-                 'table-exact interpolation contains negative strengths; use '// &
-                 'weight_policy=''nonnegative-refit'' for strict passivity.', &
-                 'init_anelastic_Qf8_properties')
-            if (.not.M%coarse_grained_Qf8) write(*,'(A,F8.3,A,F8.3,A)') &
+            write(*,'(A,F8.3,A,F8.3,A)') &
                  '  max realized-Q errors (S/P) = ',100.0_wp*max_qs_error, &
                  ' / ',100.0_wp*max_qp_error,' %'
-            if (.not.M%coarse_grained_Qf8 .and. &
-                max(max_qs_error,max_qp_error) > 0.10_wp) call warn_once('FQ8-FIT-001', &
+            if (max(max_qs_error,max_qp_error) > 0.10_wp) call warn_once('FQ8-FIT-001', &
                  'Realized-Q error exceeds 10 percent over 0.1-10 times f_transition.', &
                  'init_anelastic_Qf8_properties')
-            if (M%coarse_grained_Qf8) write(*,'(A)') &
-                 '  layout = 2x2x2 one-mechanism-per-node coarse cell'
-            if (.not.M%coarse_grained_Qf8) write(*,'(A)') &
-                 '  layout = full 8 mechanisms at every grid point'
-            if (M%coarse_grained_Qf8) write(*,'(A)') &
-                 '  modulus normalization = harmonic coarse-cell reference'
-            if (.not.M%coarse_grained_Qf8) write(*,'(A)') &
-                 '  modulus normalization = collocated full-mechanism reference'
-            if (M%coarse_grained_Qf8) then
-               sample_frequencies=[0.1_wp,0.2_wp,0.5_wp,1.0_wp,2.0_wp,5.0_wp,10.0_wp]
-               write(*,'(A,ES12.4,A,ES12.4)') '  common modulus scale (S/P) = ', &
-                    fq8_common_modulus_scale(parameters%fref,M%tau_Qf8,M%strength_s_Qf8), &
-                    ' / ',fq8_common_modulus_scale(parameters%fref,M%tau_Qf8,M%strength_p_Qf8)
-               write(*,'(A)') '  f(Hz)       Qeff_S       Qeff_P       cS/cSref     cP/cPref'
-               do sample=1,size(sample_frequencies)
-                  qeff_s=fq8_effective_q(sample_frequencies(sample),M%tau_Qf8,M%strength_s_Qf8)
-                  qeff_p=fq8_effective_q(sample_frequencies(sample),M%tau_Qf8,M%strength_p_Qf8)
-                  velocity_ratio_s=fq8_phase_velocity_ratio(sample_frequencies(sample), &
-                       parameters%fref,M%tau_Qf8,M%strength_s_Qf8)
-                  velocity_ratio_p=fq8_phase_velocity_ratio(sample_frequencies(sample), &
-                       parameters%fref,M%tau_Qf8,M%strength_p_Qf8)
-                  write(*,'(F8.3,4ES14.5)') sample_frequencies(sample),qeff_s,qeff_p, &
-                       velocity_ratio_s,velocity_ratio_p
-               end do
-            end if
+            write(*,'(A)') '  layout = full 8 mechanisms at every grid point'
+            write(*,'(A)') '  modulus normalization = collocated full-mechanism reference'
          end if
 
       end subroutine init_anelastic_Qf8_properties
@@ -1993,7 +1949,6 @@ contains
          if (allocated(M%Deta4Qf8)) deallocate(M%Deta4Qf8,M%Deta5Qf8,M%Deta6Qf8, &
               M%Deta7Qf8,M%Deta8Qf8,M%Deta9Qf8)
          M%anelastic_Qf8=.false.; M%anelastic_Qf=.false.
-         M%coarse_grained_Qf8=.false.
          M%tau_Qf8=0.0_wp
          M%strength_s_Qf8=0.0_wp; M%strength_p_Qf8=0.0_wp
       end subroutine destroy_anelastic_Qf8_properties

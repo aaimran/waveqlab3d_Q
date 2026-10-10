@@ -11,7 +11,7 @@
  btp(1)%pml_lqrs=F,F,F, btp(1)%pml_rqrs=F,F,F, btp(1)%npml=0
 /
 &anelastic_fQ8_list
- coefficient_method='conventional-nnls', weight_policy='table-exact', coarse_grain=0,
+ coefficient_method='conventional-nnls', weight_policy='table-exact',
  Qs0=50d0, Qp0=50d0, gamma=0.6d0, f_transition=1d0, fref=1d0
 /
 &moment_list

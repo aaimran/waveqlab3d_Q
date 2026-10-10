@@ -86,6 +86,8 @@ set(WQL3D_SRC
   diagnostics.f90
   decomposition_safety.f90
   datatypes.f90
+  anelastic_cg8_types.f90 anelastic_cg_t_types.f90
+  anelastic_cg8_layout.f90
   domain.f90
   metrics.f90
   elastic.f90
@@ -99,12 +101,21 @@ set(WQL3D_SRC
   anelastic_cq8_b2_model.f90
   anelastic_cq_model.f90
   anelastic_fq_model.f90
+  anelastic_cg8_model.f90
+  anelastic_cq8_cg_model.f90
+  anelastic_fq8_cg_model.f90
   anelastic_fq8_model.f90
   simulation_config.f90
   input_preflight.f90
   material.f90
   anelastic_cq_material.f90
   anelastic_fq_material.f90
+  anelastic_cg8_material.f90
+  anelastic_cg_t_model.f90
+  anelastic_cg_t_comm.f90
+  anelastic_cg_t_material.f90
+  anelastic_cq_cg_t_model.f90
+  anelastic_fq_cg_t_model.f90
   plastic_material.f90
   pml.f90
   mpi3dbasic.f90
@@ -131,6 +142,10 @@ set(WQL3D_SRC
 
 set (PRE_WQL3D_SRC
     common.f90
+    withers_tables.f90
+    anelastic_fq_model.f90
+    anelastic_cg8_model.f90
+    anelastic_cg8_types.f90 anelastic_cg_t_types.f90
     diagnostics.f90
     datatypes.f90
     grid.f90
@@ -155,6 +170,33 @@ install(TARGETS waveqlab3d pre_wql3d RUNTIME DESTINATION bin)
 ###############################################
 
 if(BUILD_TESTING)
+
+add_executable(cgt_coefficients_test common.f90 withers_tables.f90 anelastic_fq_model.f90
+  anelastic_cg8_model.f90 anelastic_cg_t_model.f90 anelastic_cq_cg_t_model.f90 anelastic_fq_cg_t_model.f90
+  ../tests/cg_t/coefficients_test.f90)
+wql3d_setup_target(cgt_coefficients_test)
+add_test(NAME cgt_coefficients_unit COMMAND $<TARGET_FILE:cgt_coefficients_test>)
+
+add_executable(cgt_material_test common.f90 withers_tables.f90 anelastic_fq_model.f90
+  anelastic_cg8_model.f90 anelastic_cg8_types.f90 anelastic_cg_t_types.f90 anelastic_cg8_layout.f90
+  diagnostics.f90 mpi3dbasic.f90 mpi3dcomm.f90 mpi3dio.f90 mpi3d_interface.f90 datatypes.f90 decomposition_safety.f90
+  anelastic_cg_t_model.f90 anelastic_cg_t_comm.f90 anelastic_cg_t_material.f90 ../tests/cg_t/material_mpi_test.f90)
+wql3d_setup_target(cgt_material_test)
+target_link_libraries(cgt_material_test PRIVATE MPI::MPI_Fortran)
+
+add_executable(cg8_material_test common.f90 withers_tables.f90 anelastic_fq_model.f90
+  anelastic_cg8_model.f90 anelastic_cg8_types.f90 anelastic_cg_t_types.f90 anelastic_cg8_layout.f90
+  mpi3dbasic.f90 mpi3dcomm.f90 mpi3dio.f90 mpi3d_interface.f90 diagnostics.f90
+  datatypes.f90 decomposition_safety.f90 anelastic_cg8_material.f90 ../tests/cg8/material_test.f90)
+wql3d_setup_target(cg8_material_test)
+target_link_libraries(cg8_material_test PRIVATE MPI::MPI_Fortran)
+add_test(NAME cg8_material_unit COMMAND $<TARGET_FILE:cg8_material_test>)
+
+add_executable(cg8_coefficients_test common.f90 withers_tables.f90 anelastic_fq_model.f90
+  anelastic_cg8_model.f90 anelastic_cq8_cg_model.f90 anelastic_fq8_cg_model.f90
+  ../tests/cg8/coefficients_test.f90)
+wql3d_setup_target(cg8_coefficients_test)
+add_test(NAME cg8_coefficients_unit COMMAND $<TARGET_FILE:cg8_coefficients_test>)
 
 add_executable(fq_coefficients_test
   common.f90 withers_tables.f90 anelastic_fq_model.f90
@@ -200,6 +242,39 @@ set(legacy_test_args
   "-DEXE=$<TARGET_FILE:waveqlab3d>"
   "-DPRE_EXE=$<TARGET_FILE:pre_wql3d>"
   "-DPYTHON=${Python3_EXECUTABLE}")
+set(WQL3D_SCIENTIFIC_PYTHON "${Python3_EXECUTABLE}" CACHE FILEPATH
+  "Python interpreter with NumPy for the CG8 scientific gates")
+if(WQL3D_SCIENTIFIC_PYTHON)
+  execute_process(COMMAND "${WQL3D_SCIENTIFIC_PYTHON}" -c "import numpy"
+    RESULT_VARIABLE cg8_numpy_status OUTPUT_QUIET ERROR_QUIET)
+  if(cg8_numpy_status EQUAL 0)
+    add_test(NAME cg8_transition_wave_gate
+      COMMAND "${WQL3D_SCIENTIFIC_PYTHON}" "${CMAKE_CURRENT_SOURCE_DIR}/../tests/cg8/transition_wave_test.py"
+        --coefficients-exe $<TARGET_FILE:cg8_coefficients_test>)
+    foreach(cg8_stencil JJU_x6_upwind JJU_x6_upwind_drp)
+      add_test(NAME cg8_transition_wave_${cg8_stencil}
+        COMMAND "${WQL3D_SCIENTIFIC_PYTHON}" "${CMAKE_CURRENT_SOURCE_DIR}/../tests/cg8/transition_wave_test.py"
+          --coefficients-exe $<TARGET_FILE:cg8_coefficients_test> --stencil ${cg8_stencil})
+    endforeach()
+    foreach(cgt_stencil JJU_x6 JJU_x6_upwind JJU_x6_upwind_drp)
+      foreach(cgt_wave P S)
+        add_test(NAME cgt_transition_${cgt_stencil}_${cgt_wave}
+          COMMAND "${WQL3D_SCIENTIFIC_PYTHON}" "${CMAKE_CURRENT_SOURCE_DIR}/../tests/cg_t/transition_wave_test.py"
+            --coefficients-exe $<TARGET_FILE:cg8_coefficients_test> --stencil ${cgt_stencil} --wave ${cgt_wave})
+      endforeach()
+    endforeach()
+    add_test(NAME cgt_bloch_scientific_gate
+      COMMAND "${WQL3D_SCIENTIFIC_PYTHON}" "${CMAKE_CURRENT_SOURCE_DIR}/../tests/cg_t/scientific_gate.py"
+        --coefficients-exe $<TARGET_FILE:cg8_coefficients_test>)
+    add_test(NAME cg8_bloch_scientific_gate
+      COMMAND "${WQL3D_SCIENTIFIC_PYTHON}" "${CMAKE_CURRENT_SOURCE_DIR}/../tests/cg8/scientific_gate.py"
+        --coefficients-exe $<TARGET_FILE:cg8_coefficients_test>
+        --assert-supported --output cg8-bloch-report.json)
+  else()
+    message(STATUS "CG8 scientific gate requires NumPy; set WQL3D_SCIENTIFIC_PYTHON to an appropriate interpreter.")
+  endif()
+endif()
+
 if(WQL3D_MPI_RUNNER AND EXISTS "${WQL3D_MPI_RUNNER}")
 
 set (no_mpi_proc 4)
@@ -244,6 +319,143 @@ add_test(NAME fq_smooth_dynamic_pml_decomposition
     "-DINPUT=${CMAKE_CURRENT_SOURCE_DIR}/../inputfile/test_anelastic_fQ_smooth.in"
     "-DSTATE_LABEL=fQ"
     -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/run_fq_pml_regression.cmake)
+
+if(WQL3D_SCIENTIFIC_PYTHON)
+  add_test(NAME cq8_cg_mpi_histories
+    COMMAND "${WQL3D_SCIENTIFIC_PYTHON}" "${CMAKE_CURRENT_SOURCE_DIR}/../tests/cg8/mpi_histories.py"
+      --exe $<TARGET_FILE:waveqlab3d> --mpi-config "${CMAKE_CURRENT_BINARY_DIR}/mpi_test_config.cmake"
+      --input "${CMAKE_CURRENT_SOURCE_DIR}/../inputfile/test_anelastic_cQ8_cg_dynamic.in")
+endif()
+
+if(WQL3D_SCIENTIFIC_PYTHON)
+  add_test(NAME fq8_cg_mpi_histories
+    COMMAND "${WQL3D_SCIENTIFIC_PYTHON}" "${CMAKE_CURRENT_SOURCE_DIR}/../tests/cg8/mpi_histories.py"
+      --exe $<TARGET_FILE:waveqlab3d> --mpi-config "${CMAKE_CURRENT_BINARY_DIR}/mpi_test_config.cmake"
+      --input "${CMAKE_CURRENT_SOURCE_DIR}/../inputfile/test_anelastic_fQ8_cg_dynamic.in")
+endif()
+
+if(WQL3D_SCIENTIFIC_PYTHON)
+  foreach(cg8_response cQ fQ)
+    foreach(cg8_fd upwind upwind_drp)
+      add_test(NAME ${cg8_response}8_cg_${cg8_fd}6_mpi_histories
+        COMMAND "${WQL3D_SCIENTIFIC_PYTHON}" "${CMAKE_CURRENT_SOURCE_DIR}/../tests/cg8/mpi_histories.py"
+          --exe $<TARGET_FILE:waveqlab3d> --mpi-config "${CMAKE_CURRENT_BINARY_DIR}/mpi_test_config.cmake"
+          --input "${CMAKE_CURRENT_SOURCE_DIR}/../inputfile/test_anelastic_${cg8_response}8_cg_dynamic.in"
+          --fd-type ${cg8_fd} --order 6)
+    endforeach()
+  endforeach()
+endif()
+
+foreach(cg8_response cQ fQ)
+  foreach(cg8_fd upwind upwind_drp)
+    add_test(NAME ${cg8_response}8_cg_${cg8_fd}6_pml_decomposition
+      COMMAND ${CMAKE_COMMAND}
+        "-DMPI_CONFIG=${CMAKE_CURRENT_BINARY_DIR}/mpi_test_config.cmake"
+        "-DEXE=$<TARGET_FILE:waveqlab3d>"
+        "-DINPUT=${CMAKE_CURRENT_SOURCE_DIR}/../inputfile/test_anelastic_${cg8_response}8_cg_${cg8_fd}6.in"
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/run_cg8_pml_regression.cmake)
+  endforeach()
+endforeach()
+
+# MPI-initializing kernels use the configured launcher even for one rank.
+add_test(NAME cgt_material_unit
+  COMMAND "${WQL3D_MPI_RUNNER}" ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS}
+    $<TARGET_FILE:cgt_material_test> ${MPIEXEC_POSTFLAGS})
+foreach(cgt_ranks 2 4 8)
+  add_test(NAME cgt_material_mpi_${cgt_ranks}
+    COMMAND "${WQL3D_MPI_RUNNER}" ${MPIEXEC_NUMPROC_FLAG} ${cgt_ranks} ${MPIEXEC_PREFLAGS}
+      $<TARGET_FILE:cgt_material_test> ${MPIEXEC_POSTFLAGS})
+endforeach()
+foreach(cgt_ranks 1 2 3 4 8)
+  add_test(NAME cgt_single_cell_mpi_${cgt_ranks}
+    COMMAND "${WQL3D_MPI_RUNNER}" ${MPIEXEC_NUMPROC_FLAG} ${cgt_ranks} ${MPIEXEC_PREFLAGS}
+      $<TARGET_FILE:cgt_material_test> ${MPIEXEC_POSTFLAGS} --single-cell)
+endforeach()
+foreach(cgt_response cQ fQ)
+  foreach(cgt_fd traditional upwind upwind_drp)
+    add_test(NAME ${cgt_response}_cgt_${cgt_fd}6_dynamic
+      COMMAND ${CMAKE_COMMAND} "-DMPI_CONFIG=${CMAKE_CURRENT_BINARY_DIR}/mpi_test_config.cmake"
+        "-DEXE=$<TARGET_FILE:waveqlab3d>"
+        "-DINPUT=${CMAKE_CURRENT_SOURCE_DIR}/../inputfile/test_anelastic_${cgt_response}_cg_t_${cgt_fd}6.in"
+        "-DSTATE_LABEL=CG-T" -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/run_q8_dynamic_regression.cmake)
+    if(WQL3D_SCIENTIFIC_PYTHON)
+      add_test(NAME ${cgt_response}_cgt_${cgt_fd}6_histories
+        COMMAND "${WQL3D_SCIENTIFIC_PYTHON}" "${CMAKE_CURRENT_SOURCE_DIR}/../tests/cg_t/mpi_histories.py"
+          --exe $<TARGET_FILE:waveqlab3d> --mpi-config "${CMAKE_CURRENT_BINARY_DIR}/mpi_test_config.cmake"
+          --input "${CMAKE_CURRENT_SOURCE_DIR}/../inputfile/test_anelastic_${cgt_response}_cg_t_${cgt_fd}6.in")
+    endif()
+  endforeach()
+endforeach()
+
+foreach(cgt_response cQ fQ)
+  add_test(NAME ${cgt_response}_cgt_one_block
+    COMMAND ${CMAKE_COMMAND} "-DMPI_CONFIG=${CMAKE_CURRENT_BINARY_DIR}/mpi_test_config.cmake"
+      "-DEXE=$<TARGET_FILE:waveqlab3d>"
+      "-DINPUT=${CMAKE_CURRENT_SOURCE_DIR}/../inputfile/test_anelastic_${cgt_response}_cg_t_nb1.in"
+      "-DSTATE_LABEL=CG-T" -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/run_cgt_one_block_eight.cmake)
+endforeach()
+
+add_test(NAME cgt_rejects_unsupported_inputs
+  COMMAND ${CMAKE_COMMAND} "-DMPI_CONFIG=${CMAKE_CURRENT_BINARY_DIR}/mpi_test_config.cmake"
+    "-DEXE=$<TARGET_FILE:waveqlab3d>"
+    "-DINPUT=${CMAKE_CURRENT_SOURCE_DIR}/../inputfile/test_anelastic_cQ_cg_t_upwind6.in"
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/run_cgt_invalid_regression.cmake)
+foreach(cgt_response cQ fQ)
+  foreach(cgt_fd traditional upwind upwind_drp)
+    add_test(NAME ${cgt_response}_cgt_${cgt_fd}6_pml_interface
+      COMMAND ${CMAKE_COMMAND} "-DMPI_CONFIG=${CMAKE_CURRENT_BINARY_DIR}/mpi_test_config.cmake"
+        "-DEXE=$<TARGET_FILE:waveqlab3d>"
+        "-DINPUT=${CMAKE_CURRENT_SOURCE_DIR}/../inputfile/test_anelastic_${cgt_response}_cg_t_${cgt_fd}6.in"
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/run_cgt_pml_regression.cmake)
+  endforeach()
+endforeach()
+
+add_test(NAME cg8_rejects_unsupported_inputs
+  COMMAND ${CMAKE_COMMAND}
+    "-DMPI_CONFIG=${CMAKE_CURRENT_BINARY_DIR}/mpi_test_config.cmake"
+    "-DEXE=$<TARGET_FILE:waveqlab3d>"
+    "-DINPUT=${CMAKE_CURRENT_SOURCE_DIR}/../inputfile/test_anelastic_cQ8_cg_dynamic.in"
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/run_cg8_invalid_regression.cmake)
+
+add_test(NAME cq8_cg_one_block_decomposition
+  COMMAND ${CMAKE_COMMAND}
+    "-DMPI_CONFIG=${CMAKE_CURRENT_BINARY_DIR}/mpi_test_config.cmake"
+    "-DEXE=$<TARGET_FILE:waveqlab3d>"
+    "-DINPUT=${CMAKE_CURRENT_SOURCE_DIR}/../inputfile/test_anelastic_cQ8_cg_nb1.in"
+    "-DSTATE_LABEL=CG8"
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/run_q8_dynamic_regression.cmake)
+
+add_test(NAME cq8_cg_dynamic_decomposition
+  COMMAND ${CMAKE_COMMAND}
+    "-DMPI_CONFIG=${CMAKE_CURRENT_BINARY_DIR}/mpi_test_config.cmake"
+    "-DEXE=$<TARGET_FILE:waveqlab3d>"
+    "-DINPUT=${CMAKE_CURRENT_SOURCE_DIR}/../inputfile/test_anelastic_cQ8_cg_dynamic.in"
+    "-DSTATE_LABEL=CG8"
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/run_q8_dynamic_regression.cmake)
+
+add_test(NAME cq8_cg_pml_decomposition
+  COMMAND ${CMAKE_COMMAND}
+    "-DMPI_CONFIG=${CMAKE_CURRENT_BINARY_DIR}/mpi_test_config.cmake"
+    "-DEXE=$<TARGET_FILE:waveqlab3d>"
+    "-DINPUT=${CMAKE_CURRENT_SOURCE_DIR}/../inputfile/test_anelastic_cQ8_cg_dynamic.in"
+    "-DSTATE_LABEL=CG8"
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/run_cg8_pml_regression.cmake)
+
+add_test(NAME fq8_cg_dynamic_decomposition
+  COMMAND ${CMAKE_COMMAND}
+    "-DMPI_CONFIG=${CMAKE_CURRENT_BINARY_DIR}/mpi_test_config.cmake"
+    "-DEXE=$<TARGET_FILE:waveqlab3d>"
+    "-DINPUT=${CMAKE_CURRENT_SOURCE_DIR}/../inputfile/test_anelastic_fQ8_cg_dynamic.in"
+    "-DSTATE_LABEL=CG8"
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/run_q8_dynamic_regression.cmake)
+
+add_test(NAME fq8_cg_pml_decomposition
+  COMMAND ${CMAKE_COMMAND}
+    "-DMPI_CONFIG=${CMAKE_CURRENT_BINARY_DIR}/mpi_test_config.cmake"
+    "-DEXE=$<TARGET_FILE:waveqlab3d>"
+    "-DINPUT=${CMAKE_CURRENT_SOURCE_DIR}/../inputfile/test_anelastic_fQ8_cg_dynamic.in"
+    "-DSTATE_LABEL=CG8"
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/run_cg8_pml_regression.cmake)
 
 add_test(NAME fq_dynamic_decomposition
   COMMAND ${CMAKE_COMMAND}
@@ -391,15 +603,15 @@ add_test(NAME q8_dynamic_pml_decomposition
     "-DINPUT=${CMAKE_CURRENT_SOURCE_DIR}/../inputfile/test_anelastic_Q8_dynamic_pml.in"
     -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/run_q8_dynamic_regression.cmake)
 
-add_test(NAME fq8_coarse_grain_2_dynamic_decomposition
+add_test(NAME fq8_rejects_legacy_coarse
   COMMAND ${CMAKE_COMMAND}
     "-DMPI_CONFIG=${CMAKE_CURRENT_BINARY_DIR}/mpi_test_config.cmake"
-    "-DEXE=$<TARGET_FILE:waveqlab3d>"
+    "-DNPROCS=1" "-DEXE=$<TARGET_FILE:waveqlab3d>"
     "-DINPUT=${CMAKE_CURRENT_SOURCE_DIR}/../inputfile/test_anelastic_fQ8_withers.in"
-    "-DSTATE_LABEL=fQ8"
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/run_q8_dynamic_regression.cmake)
+    "-DEXPECTED_CODE=CFG-FQ8-001"
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/run_expected_preflight_failure.cmake)
 
-add_test(NAME fq8_coarse_grain_0_dynamic_decomposition
+add_test(NAME fq8_full_dynamic_decomposition
   COMMAND ${CMAKE_COMMAND}
     "-DMPI_CONFIG=${CMAKE_CURRENT_BINARY_DIR}/mpi_test_config.cmake"
     "-DEXE=$<TARGET_FILE:waveqlab3d>"

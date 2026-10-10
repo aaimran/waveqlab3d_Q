@@ -5,6 +5,8 @@ module fields
   use common, only : wp
   use datatypes, only : block_type, block_fields
    use, intrinsic :: ieee_arithmetic
+  use anelastic_cg_t_material,only:scale_cgt_rates,update_cgt_memory
+  use anelastic_cg8_material, only: scale_cg8_rates,update_cg8_memory
   implicit none
 
   !> first few indices are for spatial dimensions, last index is for field component
@@ -58,6 +60,8 @@ contains
     
 
     F%F%DF = A*F%F%DF
+    call scale_cg8_rates(F%M,A)
+    call scale_cgt_rates(F%M,A)
 
       if (F%M%anelastic) then
          F%M%Deta4 = A*F%M%Deta4
@@ -175,6 +179,8 @@ contains
     real(kind = wp),intent(in) :: dt
 
     F%F%F = F%F%F + dt*F%F%DF
+    call update_cg8_memory(F%M,dt)
+    call update_cgt_memory(F%M,dt)
 
       if (F%M%anelastic) then
          F%M%eta4 = F%M%eta4 + dt*F%M%Deta4

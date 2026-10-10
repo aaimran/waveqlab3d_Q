@@ -1,0 +1,16 @@
+# The fortran modules provided by this target.
+provides
+ anelastic_cg8_model.mod
+ anelastic_cg8_types.mod
+ anelastic_cg_t_types.mod
+ anelastic_fq_model.mod
+ common.mod
+ datatypes.mod
+ diagnostics.mod
+ grid.mod
+ metrics.mod
+ mpi3d_interface.mod
+ mpi3dbasic.mod
+ mpi3dcomm.mod
+ mpi3dio.mod
+ withers_tables.mod
