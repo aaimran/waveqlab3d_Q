@@ -4,7 +4,6 @@ project(WaveQLab3D LANGUAGES Fortran)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 find_package(MPI REQUIRED COMPONENTS Fortran)
 include(CTest)
-include(CheckFortranCompilerFlag)
 include(CheckFortranSourceCompiles)
 
 # Legacy source relies on eight-byte default REAL. Keep this consistent across
@@ -31,12 +30,10 @@ if(NOT WQL3D_REAL8_FLAG)
 else()
   separate_arguments(real8_flags NATIVE_COMMAND "${WQL3D_REAL8_FLAG}")
 endif()
+# Check the actual precision instead of rejecting unrelated wrapper warnings
+# (Intel MPI wrappers can inject GNU-only options that ifort ignores).
 # Key cached checks by the selected flags so changing an override rechecks it.
 string(SHA256 flag_key "${real8_flags}")
-check_fortran_compiler_flag("${real8_flags}" "WQL3D_HAS_REAL8_${flag_key}")
-if(NOT WQL3D_HAS_REAL8_${flag_key})
-  message(FATAL_ERROR "Compiler does not support ${real8_flags}; set WQL3D_REAL8_FLAG for this toolchain.")
-endif()
 
 set(saved_required_flags "${CMAKE_REQUIRED_FLAGS}")
 string(JOIN " " precision_flags ${real8_flags})
