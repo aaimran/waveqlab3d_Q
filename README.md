@@ -18,6 +18,35 @@ cmake --install build --config Release --prefix .
 ```
 
 Installation places the executables in `bin`, including `.exe` on Windows.
+Ctrl+C requests a coordinated stop at the next time-step boundary. The solver
+closes its output files, prints `Simulation interrupted by Ctrl+C.` once from
+rank 0, finalizes MPI, and exits with status 130. Interrupted output represents
+only the completed steps. The signal handler only records a flag; MPI and file
+operations happen in normal execution. Shutdown can wait for initialization or
+the current step to finish. The MPI launcher may print its own termination
+summary or forcibly terminate ranks before this cleanup; launcher behavior is
+outside the solver's control. Signal handling has been verified locally on
+macOS; the Intel MPI/Linux environment needs a Ctrl+C smoke test after rebuilding.
+The implementation uses GNU Fortran's SIGNAL extension or Intel's IFPORT SIGNAL,
+plus the compiler's EXIT intrinsic; no C source or C compiler is required.
+Coordinated signal handling is enabled for GNU and Intel Fortran on Unix. Other toolchains retain their default
+runtime signal handling, with a warning at configuration. SIGUSR1 defaults to
+10 on Linux and 30 on macOS; override `-DWQL3D_SIGUSR1=number` if the target
+platform uses another number (0 disables SIGUSR1 handling).
+
+For Slurm, add `#SBATCH --signal=USR1@120` to request an early stop warning
+approximately two minutes before the wall-time limit. Launch the solver as a
+Slurm job step (for example with the site's supported `srun` command) so the
+warning reaches the ranks. Do not use the `B:` prefix, which signals only the
+batch shell. Allow enough warning time for a full time step and output cleanup.
+SIGUSR1 prints one scheduler-warning message; SIGTERM prints one termination
+message (it can also mean cancellation). Both use the same coordinated cleanup
+and exit with status `128 + signal number` on each rank. This preserves partial
+output, but does not create a restart checkpoint. Slurm sends SIGTERM followed
+by SIGKILL at the time limit; SIGKILL cannot be caught, so cleanup and a single
+message cannot be guaranteed after the hard limit. See
+[Slurm's signal and time-limit options](https://slurm.schedmd.com/sbatch.html).
+
 For a multi-configuration generator, `--config Release` chooses the build
 configuration. To choose an MPI compiler wrapper explicitly, pass
 `-DCMAKE_Fortran_COMPILER=mpifort` on the first configuration. To omit test

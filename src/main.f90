@@ -22,6 +22,7 @@ program main
 
   use common, only : wp
   use mpi3dbasic, only: start_mpi, finish_mpi, is_master
+  use interrupt_control, only: install_interrupt_handler, interruption_requested, finish_interrupted
   !use hdf5_output
   use domain, only : domain_type,init_domain, close_domain, &
                      eval_mms, norm_fields, write_fault_output
@@ -52,7 +53,7 @@ program main
   character(len=256) :: ifname !< Input filename
   character(len=32) :: preflight_env
   integer :: infile, len_ifname, stat
-  logical :: preflight_only
+  logical :: preflight_only, interrupted
   real(kind = wp) :: t1, t2     ! timing information
   real(kind = wp) :: step_s, progress_pct
 
@@ -66,6 +67,7 @@ program main
   ! initialize
 
   call start_mpi ! Initialize MPI for parallel processing
+  call install_interrupt_handler()
   !call start_hdf_output() ! Initialize the parallel I/O using HF5
 
   ! Read the command-line to get the input filename
@@ -73,6 +75,7 @@ program main
   if (stat /= 0) stop ':: Problem reading input filename from commandline.'
 
   call preflight_input(ifname, resolved_config)
+  if (interruption_requested()) call finish_interrupted()
 
   preflight_env = ''
   call get_environment_variable('WAVEQLAB3D_PREFLIGHT_ONLY', preflight_env, status=stat)
@@ -97,7 +100,10 @@ program main
   ! loop over all time steps, advancing solution according to wave equation
   ! and boundary and interface conditions; output is done within the time-
   ! stepping routine
+  interrupted = .false.
   do n = 1, D%nt
+    interrupted = interruption_requested()
+    if (interrupted) exit
     call cpu_time(t1)
     call time_step_RK(D,D%dt,RK, n)
     
@@ -150,6 +156,9 @@ program main
   end do
 
   call close_domain(D)
+  ! Also catch interruption during the last step or output cleanup.
+  if (interruption_requested()) interrupted = .true.
+  if (interrupted) call finish_interrupted()
   !call finish_hdf_output()
 
   call finish_mpi
