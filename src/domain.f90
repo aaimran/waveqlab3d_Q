@@ -346,9 +346,14 @@ contains
     ! Initialize seismometers and plane outputs for each block (generalized for 1 or 2 blocks)
     do i = 1, D%nblocks
       D%seismometers(i)%block_num = i
-      if (in_block_comm(i)) call init_seismogram(infile, D%seismometers(i), D%name, D%B(i)%G)
+      if (in_block_comm(i)) call init_seismogram(infile, D%seismometers(i), D%name, D%B(i)%G, config%receivers, D%nblocks)
       if (in_block_comm(i)) call init_plane_output(infile, D%name, D%plane_outputs(i), D%B(i)%G, i)
     end do
+    call check_station_paths(D%seismometers)
+    do i=1,D%nblocks
+      if(in_block_comm(i)) call open_station_files(D%seismometers(i),D%B(i)%G)
+    enddo
+
     
     !> above assumes that blocks contain fields defined on a structured mesh,
     !> which is a cube in the computational domain; the computational coordinates

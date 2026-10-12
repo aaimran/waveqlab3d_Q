@@ -384,3 +384,7 @@ Examples are `inputfile/test_anelastic_{cQ,fQ}_cg_t_{traditional,upwind,upwind_d
 and `inputfile/test_anelastic_{cQ,fQ}_cg_t_nb1.in`. The implementation/validation
 record is `docs/cg-t-validation.md`; the development plan is
 `cg-t-implementation-plan.md`.
+
+Receiver settings can also use the separate `&output_receiver_stations` namelist.
+See [receiver station output](docs/receiver_station_output.md) for interface-side
+selection, explicit filename suffixes, and a TPV5 example.

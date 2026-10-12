@@ -105,6 +105,7 @@ set(WQL3D_SRC
   anelastic_cq8_cg_model.f90
   anelastic_fq8_cg_model.f90
   anelastic_fq8_model.f90
+  receiver_output_config.f90
   simulation_config.f90
   input_preflight.f90
   material.f90
@@ -260,6 +261,13 @@ else()
   message(WARNING "MPI launcher unavailable; only coefficient unit tests will be registered.")
 endif()
 find_package(Python3 QUIET COMPONENTS Interpreter NumPy)
+if(Python3_Interpreter_FOUND AND WQL3D_MPI_RUNNER)
+  add_test(NAME receiver_station_output
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/../tests/receivers/check_outputs.py"
+      --exe $<TARGET_FILE:waveqlab3d> --mpiexec "${WQL3D_MPI_RUNNER}"
+      --work "${CMAKE_CURRENT_BINARY_DIR}/receiver-station-check")
+  set_tests_properties(receiver_station_output PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
+endif()
 if(WQL3D_SIGNAL_SUPPORTED AND Python3_Interpreter_FOUND AND WQL3D_MPI_RUNNER AND EXISTS "${WQL3D_MPI_RUNNER}")
   add_executable(interrupt_mpi_test interrupt_control.F90 ../tests/interrupt_mpi_test.f90)
   wql3d_setup_target(interrupt_mpi_test)

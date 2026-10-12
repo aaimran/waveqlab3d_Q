@@ -1,5 +1,6 @@
 module simulation_config
 
+  use receiver_output_config, only: receiver_config_t
   use common, only : wp
   use datatypes, only : block_temp_parameters
   use anelastic_q4_model, only : q4_parameters
@@ -39,6 +40,7 @@ module simulation_config
   end type problem_config_t
 
   type, public :: simulation_config_t
+     type(receiver_config_t) :: receivers
      type(problem_config_t) :: problem
      type(block_temp_parameters), allocatable :: blocks(:)
      type(q4_parameters) :: q4

@@ -309,6 +309,11 @@ module datatypes
       logical :: station_xyz_index
       logical :: station_number_in_list, station_number_in_filename
       logical :: station_use_block_subdirectories, station_both_blocks
+      logical :: station_add_header, station_add_metadata
+      logical :: station_name_in_list
+      character(64),allocatable :: station_names(:)
+      character(512),allocatable :: station_paths(:)
+      character(256),allocatable :: station_requests(:),station_mappings(:)
       integer :: stride_fields,file_unit_block1(9),file_unit_block2(9)
       integer :: nstations,block_num
       integer :: station_output_order(4) = [1, 2, 3, 4]

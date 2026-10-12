@@ -1,6 +1,9 @@
 module input_preflight
 
   use mpi
+  use, intrinsic :: ieee_arithmetic, only: ieee_value, ieee_quiet_nan, ieee_is_finite
+  use seismogram, only: parse_station_output_order
+  use receiver_output_config, only: read_receiver_config, broadcast_receiver_config, valid_station_name, lowercase
   use common, only : wp
   use datatypes, only : block_temp_parameters
   use diagnostics, only : diagnostic_list_t, DIAG_WARNING, DIAG_ERROR, &
@@ -37,30 +40,21 @@ contains
     character(len=64) :: coupling, fd_type, mesh_source, type_of_mesh, material_source
     character(len=512) :: iomsg
     integer :: nblocks, nt, order, w_stride
-    integer :: stride_fields
     integer :: infile, stat, ierr, world_rank, world_size
     real(wp) :: CFL, t_final, topo
     logical :: w_fault, interpol, use_topography, mollify_source, valid
-    logical :: output_exact_moment, output_seismograms, output_station_info
-    logical :: output_station_mapping, output_fault_topo
-    logical :: output_fields_block1, output_fields_block2, station_xyz_index
-    logical :: station_number_in_list, station_number_in_filename
-    logical :: station_use_block_subdirectories, station_add_header, station_add_metadata
-    character(len=256) :: station_list, station_list_file, station_file_directory
-    character(len=256) :: station_output_order, common_stations_blocks
+    logical :: output_seismograms
+    logical :: station_number_in_list
+    character(len=256) :: station_list, station_list_file
+    integer :: receiver_order(4), receiver_order_stat
+    character(len=256) :: station_output_order
 
     namelist /problem_list/ name, problem, response, plastic_model, nblocks, &
          nt, CFL, coupling, fd_type, order, t_final, mesh_source, type_of_mesh, &
          material_source, interpol, w_stride, w_fault, use_topography, topo, &
          mollify_source
     namelist /block_list/ btp
-    namelist /output_list/ output_exact_moment, output_seismograms, output_station_info, &
-         output_station_mapping, output_fault_topo, output_fields_block1, &
-         output_fields_block2, stride_fields, station_xyz_index, station_list, &
-         station_list_file, station_file_directory, station_output_order, &
-         station_number_in_list, station_number_in_filename, &
-         station_use_block_subdirectories, common_stations_blocks, &
-         station_add_header, station_add_metadata
+
 
     call MPI_Comm_rank(MPI_COMM_WORLD, world_rank, ierr)
     call MPI_Comm_size(MPI_COMM_WORLD, world_size, ierr)
@@ -70,13 +64,7 @@ contains
             nt, CFL, coupling, fd_type, order, t_final, mesh_source, type_of_mesh, &
             material_source, interpol, w_stride, w_fault, use_topography, topo, &
             mollify_source)
-       call set_output_defaults(output_exact_moment, output_seismograms, &
-            output_station_info, output_station_mapping, output_fault_topo, &
-            output_fields_block1, output_fields_block2, stride_fields, &
-            station_xyz_index, station_list, station_list_file, &
-            station_file_directory, station_output_order, station_number_in_list, &
-            station_number_in_filename, station_use_block_subdirectories, &
-            common_stations_blocks, station_add_header, station_add_metadata)
+
 
        open(newunit=infile, file=filename, status='old', action='read', &
             iostat=stat, iomsg=iomsg)
@@ -298,14 +286,27 @@ contains
 
           if (.not.issues%has_errors()) then
              rewind(infile)
-             read(infile, nml=output_list, iostat=stat, iomsg=iomsg)
+             call read_receiver_config(infile, config%receivers, stat, iomsg)
+             output_seismograms=config%receivers%output_seismograms
+             station_number_in_list=config%receivers%station_number_in_list
+             station_list=config%receivers%station_list
+             station_list_file=config%receivers%station_list_file
+             station_output_order=config%receivers%station_output_order
              if (stat /= 0) then
                 call issues%add(DIAG_ERROR, 'CFG-OUTPUT-001', &
-                     'Cannot parse &output_list: '//trim(iomsg), section='output_list', &
+                     'Cannot parse output configuration: '//trim(iomsg), section='output_list/output_receiver_stations', &
                      suggestion='Fix namelist syntax or unknown fields.')
-             else if (output_seismograms) then
+             else
+                call parse_station_output_order(station_output_order,receiver_order,receiver_order_stat)
+                if(receiver_order_stat/=0) call issues%add(DIAG_ERROR,'CFG-RECEIVER-ORDER', &
+                     'station_output_order requires t, vx, vy, vz exactly once')
+             endif
+             if(stat==0.and.nblocks==1.and.config%receivers%split_receivers.and. &
+                      config%receivers%interface_stations=="block_2") then
+                call issues%add(DIAG_ERROR,"CFG-RECEIVER-002","block_2 requires two blocks")
+             else if (stat==0.and.output_seismograms) then
                 call validate_station_rows(infile, station_list, station_list_file, &
-                     station_number_in_list, issues)
+                     station_number_in_list, issues, config%receivers%station_name_in_list)
              end if
           end if
           close(infile)
@@ -355,41 +356,16 @@ contains
   end subroutine preflight_input
 
 
-  subroutine set_output_defaults(output_exact_moment, output_seismograms, &
-       output_station_info, output_station_mapping, output_fault_topo, &
-       output_fields_block1, output_fields_block2, stride_fields, station_xyz_index, &
-       station_list, station_list_file, station_file_directory, station_output_order, &
-       station_number_in_list, station_number_in_filename, &
-       station_use_block_subdirectories, common_stations_blocks, station_add_header, &
-       station_add_metadata)
-    logical, intent(out) :: output_exact_moment, output_seismograms
-    logical, intent(out) :: output_station_info, output_station_mapping, output_fault_topo
-    logical, intent(out) :: output_fields_block1, output_fields_block2, station_xyz_index
-    logical, intent(out) :: station_number_in_list, station_number_in_filename
-    logical, intent(out) :: station_use_block_subdirectories, station_add_header
-    logical, intent(out) :: station_add_metadata
-    integer, intent(out) :: stride_fields
-    character(*), intent(out) :: station_list, station_list_file
-    character(*), intent(out) :: station_file_directory, station_output_order
-    character(*), intent(out) :: common_stations_blocks
 
-    output_exact_moment = .false.; output_seismograms = .false.
-    output_station_info = .true.; output_station_mapping = .true.
-    output_fault_topo = .false.; output_fields_block1 = .false.
-    output_fields_block2 = .false.; stride_fields = 1; station_xyz_index = .false.
-    station_list = 'infile'; station_list_file = ''; station_file_directory = 'seismogram'
-    station_output_order = 't vx vy vz'; station_number_in_list = .false.
-    station_number_in_filename = .false.; station_use_block_subdirectories = .true.
-    common_stations_blocks = 'both'; station_add_header = .false.
-    station_add_metadata = .false.
-  end subroutine set_output_defaults
 
 
   subroutine validate_station_rows(input_unit, station_list, station_list_file, &
-       has_station_number, issues)
+       has_station_number, issues, has_station_name)
     integer, intent(in) :: input_unit
     character(*), intent(in) :: station_list, station_list_file
-    logical, intent(in) :: has_station_number
+    logical, intent(in) :: has_station_number, has_station_name
+    character(256)::station_name
+    character(256),allocatable::names(:)
     type(diagnostic_list_t), intent(inout) :: issues
     integer :: unit, stat, row, expected_fields, station_number
     real(wp) :: x, y, z
@@ -434,13 +410,29 @@ contains
        return
     end if
 
-    expected_fields = merge(4, 3, has_station_number)
+    allocate(names(0))
+    expected_fields = merge(4, 3, has_station_number.or.has_station_name)
     row = 0
     do
        read(unit,'(A)',iostat=stat,iomsg=iomsg) line
        if (stat /= 0 .or. trim(adjustl(line)) == '!---end:station_list---') exit
        row = row + 1
-       if (has_station_number) then
+       if(has_station_name) then
+          station_name=''
+          x=ieee_value(0.0_wp,ieee_quiet_nan); y=x; z=x
+          read(line,*,iostat=stat,iomsg=iomsg) station_name,x,y,z
+          if(stat==0) then
+             if(.not.valid_station_name(station_name)) then
+                call issues%add(DIAG_ERROR,'CFG-STATION-NAME', &
+                     'Station names must be 1-64 letters, digits, hyphens or underscores'); exit
+             endif
+             if(any(lowercase(names)==lowercase(station_name))) then
+                call issues%add(DIAG_ERROR,'CFG-STATION-NAME','Duplicate station name: '//trim(station_name)); exit
+             endif
+             names=[names,station_name]
+             if(.not.all(ieee_is_finite([x,y,z]))) stat=1
+          endif
+       else if (has_station_number) then
           read(line,*,iostat=stat,iomsg=iomsg) station_number, x, y, z
        else
           read(line,*,iostat=stat,iomsg=iomsg) x, y, z
@@ -449,9 +441,11 @@ contains
           write(message,'(A,I0,A,I0,A,A)') 'Station row ', row, ' must contain exactly ', &
                expected_fields, merge(' fields: station_number x y z. Row: ', &
                ' fields: x y z. Row:                ', has_station_number), trim(line)
+          if(has_station_name) write(message,'(A,I0,A,A)') &
+               'Station row ',row,' must contain name x y z. Row: ',trim(line)
           call issues%add(DIAG_ERROR, 'CFG-STATION-002', trim(message), &
                section='station_list', field=trim(source), &
-               suggestion='Make station_number_in_list match the station row format.')
+               suggestion='Match station_number_in_list/station_name_in_list to the row format.')
           exit
        end if
     end do
@@ -828,6 +822,7 @@ contains
     integer, intent(in) :: world_rank
     integer :: ierr, i, nblocks
 
+    call broadcast_receiver_config(config%receivers)
     nblocks = config%problem%nblocks
     call MPI_Bcast(nblocks, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
     config%problem%nblocks = nblocks
